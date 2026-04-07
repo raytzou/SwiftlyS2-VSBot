@@ -4,6 +4,6 @@ namespace VSBot.Commands.Interfaces
 {
     public interface ICommand
     {
-        public abstract void ExecuteCommand(ICommandContext command);
+        public abstract void ExecuteCommand(ICommandContext context);
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.Plugins;
 using System.Reflection;
+using VSBot.Classes;
 using VSBot.Commands.Interfaces;
 using VSBot.Modules;
 
@@ -11,7 +12,10 @@ namespace VSBot
     [PluginMetadata(Author = "cynicat", Name = "VSBot Plugin", Id = "26.04.01", Version = "26.04.01")]
     public class Main : BasePlugin
     {
-        private ServiceProvider? _serviceProvider;
+        public static ISwiftlyCore SwiftlyCore => _serviceProvider?.GetRequiredService<ISwiftlyCore>()
+            ?? throw new InvalidOperationException("Service provider is null.");
+
+        private static ServiceProvider? _serviceProvider;
 
         public Main(ISwiftlyCore core) : base(core)
         {
@@ -26,6 +30,7 @@ namespace VSBot
             RegisterCommands(services);
             _serviceProvider = services.BuildServiceProvider();
             InitializeCommandModule();
+            Utility.Initialize();
             Core.Logger.LogInformation("Plugin Loaded.");
         }
 
