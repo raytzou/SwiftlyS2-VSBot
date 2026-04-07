@@ -1,11 +1,14 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared;
+using SwiftlyS2.Shared.Events;
 using SwiftlyS2.Shared.Plugins;
 using System.Reflection;
 using VSBot.Classes;
 using VSBot.Commands.Interfaces;
 using VSBot.Modules;
+using VSBot.Services;
+using VSBot.Services.Interfaces;
 
 namespace VSBot
 {
@@ -17,10 +20,7 @@ namespace VSBot
 
         private static ServiceProvider? _serviceProvider;
 
-        public Main(ISwiftlyCore core) : base(core)
-        {
-
-        }
+        public Main(ISwiftlyCore core) : base(core) { }
 
         public override void Load(bool hotReload)
         {
@@ -31,6 +31,7 @@ namespace VSBot
             _serviceProvider = services.BuildServiceProvider();
             InitializeCommandModule();
             Utility.Initialize();
+            RegisterEvents();
             Core.Logger.LogInformation("Plugin Loaded.");
         }
 
@@ -39,18 +40,24 @@ namespace VSBot
             _serviceProvider?.Dispose();
         }
 
+        private void OnMapLoad(IOnMapLoadEvent @event)
+        {
+            var mapName = @event.MapName;
+
+            UpdateCurrentMap(mapName);
+            Core.Logger.LogInformation("Map start: {mapName}", mapName);
+        }
+
         private void RegisterServices(IServiceCollection services)
         {
             services.AddSwiftly(Core);
             services.AddTransient<CommandModule>();
+            services.AddSingleton<IGameStateService, GameStateService>();
         }
 
         private void InitializeCommandModule()
         {
-            if (_serviceProvider is null)
-                throw new InvalidOperationException("Service provider is null.");
-
-            var command = _serviceProvider.GetRequiredService<CommandModule>();
+            var command = GetRequiredService<CommandModule>();
             command.Initialize();
         }
 
@@ -74,6 +81,24 @@ namespace VSBot
                     Core.Logger.LogInformation($"Registered command: {@interface.Name} -> {commandType.Name}");
                 }
             }
+        }
+
+        private void RegisterEvents()
+        {
+            Core.Event.OnMapLoad += OnMapLoad;
+        }
+
+        private T GetRequiredService<T>() where T : notnull
+        {
+            if (_serviceProvider is null)
+                throw new InvalidOperationException("Service provider is null.");
+            return _serviceProvider.GetRequiredService<T>();
+        }
+
+        private void UpdateCurrentMap(string mapName)
+        {
+            var gameState = GetRequiredService<IGameStateService>();
+            gameState.UpdateCurrentMap(mapName);
         }
     }
 }
