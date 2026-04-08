@@ -44,7 +44,6 @@ namespace VSBot
         {
             var mapName = @event.MapName;
 
-            UpdateCurrentMap(mapName);
             Core.Logger.LogInformation("Map start: {mapName}", mapName);
         }
 
@@ -93,12 +92,6 @@ namespace VSBot
             if (_serviceProvider is null)
                 throw new InvalidOperationException("Service provider is null.");
             return _serviceProvider.GetRequiredService<T>();
-        }
-
-        private void UpdateCurrentMap(string mapName)
-        {
-            var gameState = GetRequiredService<IGameStateService>();
-            gameState.UpdateCurrentMap(mapName);
         }
 
         private void UpdatePlayerCount()

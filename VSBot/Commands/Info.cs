@@ -22,7 +22,7 @@ namespace VSBot.Commands
         {
             var player = context.Sender;
             var hostname = _core.ConVar.Find<string>("hostname")?.Value;
-            var currentMap = _gameStateService.CurrentMap;
+            var currentMap = _core.Engine.GlobalVars.MapName;
             var playerCount = _gameStateService.PlayerCount;
             var maxClients = _core.Engine.GlobalVars.MaxClients;
 
