@@ -2,6 +2,7 @@
 using SwiftlyS2.Shared.GameEvents;
 using SwiftlyS2.Shared.Misc;
 using SwiftlyS2.Shared.Players;
+using VSBot.Services.Interfaces;
 
 namespace VSBot
 {
@@ -35,6 +36,26 @@ namespace VSBot
                 _players.Remove(player.SteamID);
                 UpdatePlayerCount();
             }
+
+            return HookResult.Continue;
+        }
+
+        [GameEventHandler(HookMode.Post)]
+        public HookResult RoundAnnounceWarmupHandler(EventRoundAnnounceWarmup @event)
+        {
+            var gameState = GetRequiredService<IGameStateService>();
+
+            gameState.OnWarmupStarted();
+
+            return HookResult.Continue;
+        }
+
+        [GameEventHandler(HookMode.Post)]
+        public HookResult WarmupEndHandler(EventWarmupEnd @event)
+        {
+            var gameState = GetRequiredService<IGameStateService>();
+
+            gameState.OnWarmupEnded();
 
             return HookResult.Continue;
         }
