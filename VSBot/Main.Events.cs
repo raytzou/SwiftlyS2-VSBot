@@ -1,7 +1,11 @@
-﻿using SwiftlyS2.Shared.GameEventDefinitions;
+﻿using Microsoft.Extensions.Logging;
+using SwiftlyS2.Shared.GameEventDefinitions;
 using SwiftlyS2.Shared.GameEvents;
 using SwiftlyS2.Shared.Misc;
+using SwiftlyS2.Shared.Players;
+using VSBot.Classes;
 using VSBot.Services.Interfaces;
+using static SwiftlyS2.Shared.Helper;
 
 namespace VSBot
 {
@@ -18,9 +22,19 @@ namespace VSBot
                 var gameState = GetRequiredService<IGameStateService>();
 
                 gameState.AddPlayer(player);
+                SendConnectedMessage(gameState.Players.Values.ToList());
+                Core.Logger.LogInformation("{client} has connected at {DT}, IP: {ipAddress}, SteamID: {steamID}", player.Name, DateTime.Now, player.IPAddress, player.SteamID);
             }
 
             return HookResult.Continue;
+
+            void SendConnectedMessage(List<IPlayer> players)
+            {
+                foreach (var thePlayer in players)
+                {
+                    thePlayer.SendChat($" {ChatColors.Lime}{player.Name} {Utility.GetTeamColorByPlayer(thePlayer)}has connected to the server.");
+                }
+            }
         }
 
         [GameEventHandler(HookMode.Pre)]
@@ -34,6 +48,7 @@ namespace VSBot
                 var gameState = GetRequiredService<IGameStateService>();
 
                 gameState.RemovePlayer(player.SteamID);
+                Core.Logger.LogInformation("{client} has disconnected at {DT}", player.Name, DateTime.Now);
             }
 
             return HookResult.Continue;
