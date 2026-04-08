@@ -11,16 +11,19 @@ namespace VSBot.Modules
         private readonly ILogger<CommandModule> _logger;
         private readonly IInfo _info;
         private readonly IMap _map;
+        private readonly ICvar _cvar;
 
         public CommandModule(ISwiftlyCore core, ILogger<CommandModule> logger
             , IInfo info
             , IMap map
+            , ICvar cvar
             )
         {
             _core = core;
             _info = info;
             _logger = logger;
             _map = map;
+            _cvar = cvar;
         }
 
         public void Initialize()
@@ -39,6 +42,12 @@ namespace VSBot.Modules
         public void OnMapCommand(ICommandContext context)
         {
             _map.ExecuteCommand(context);
+        }
+
+        [Command(name: "cvar", permission: "admin.cvar")]
+        public void OnCvarCommand(ICommandContext context)
+        {
+            _cvar.ExecuteCommand(context);
         }
     }
 }
