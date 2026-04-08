@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.Players;
 using VSBot.Services.Interfaces;
 
@@ -12,7 +13,7 @@ namespace VSBot.Services
         {
             get
             {
-                return (short)(_isWarmup ? 0 : Main.SwiftlyCore.Game.MatchData.ActualRoundsPlayed + 1);
+                return (short)(_isWarmup ? 0 : _core.Game.MatchData.ActualRoundsPlayed + 1);
             }
         }
         public bool IsWarmup => _isWarmup;
@@ -20,11 +21,13 @@ namespace VSBot.Services
         private Dictionary<ulong, IPlayer> _players = [];
         private bool _isWarmup = false;
 
+        private readonly ISwiftlyCore _core;
         private readonly ILogger<GameStateService> _logger;
 
-        public GameStateService(ILogger<GameStateService> logger)
+        public GameStateService(ILogger<GameStateService> logger, ISwiftlyCore core)
         {
             _logger = logger;
+            _core = core;
         }
 
         public void AddPlayer(IPlayer player)

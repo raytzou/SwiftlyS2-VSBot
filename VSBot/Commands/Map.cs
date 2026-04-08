@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.Commands;
 using VSBot.Classes;
 using VSBot.Commands.Interfaces;
@@ -8,10 +9,12 @@ namespace VSBot.Commands
     public class Map : IMap
     {
         private readonly ILogger<Map> _logger;
+        private readonly ISwiftlyCore _core;
 
-        public Map(ILogger<Map> logger)
+        public Map(ILogger<Map> logger, ISwiftlyCore core)
         {
             _logger = logger;
+            _core = core;
         }
 
         public void ExecuteCommand(ICommandContext context)
@@ -33,13 +36,13 @@ namespace VSBot.Commands
             var player = context.Sender;
 
             _logger.LogInformation("{admin} changed map to {mapName} at {DT}", player?.Name is null ? "Console" : player.Name, mapName, DateTime.Now);
-            Main.SwiftlyCore.PlayerManager.SendChat($"Admin changed map to {mapName}");
-            Main.SwiftlyCore.Scheduler.DelayBySeconds(2, () =>
+            _core.PlayerManager.SendChat($"Admin changed map to {mapName}");
+            _core.Scheduler.DelayBySeconds(2, () =>
             {
                 if (Utility.IsWorkshopMap(mapName))
-                    Main.SwiftlyCore.Engine.ExecuteCommand($"ds_workshop_changelevel {mapName}");
+                    _core.Engine.ExecuteCommand($"ds_workshop_changelevel {mapName}");
                 else
-                    Main.SwiftlyCore.Engine.ExecuteCommand($"changelevel {mapName}");
+                    _core.Engine.ExecuteCommand($"changelevel {mapName}");
             });
         }
     }
