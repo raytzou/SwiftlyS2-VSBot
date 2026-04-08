@@ -13,7 +13,7 @@ using VSBot.Services.Interfaces;
 namespace VSBot
 {
     [PluginMetadata(Author = "cynicat", Name = "VSBot Plugin", Id = "26.04.01", Version = "26.04.01")]
-    public class Main : BasePlugin
+    public partial class Main : BasePlugin
     {
         public static ISwiftlyCore SwiftlyCore => _serviceProvider?.GetRequiredService<ISwiftlyCore>()
             ?? throw new InvalidOperationException("Service provider is null.");
@@ -99,6 +99,12 @@ namespace VSBot
         {
             var gameState = GetRequiredService<IGameStateService>();
             gameState.UpdateCurrentMap(mapName);
+        }
+
+        private void UpdatePlayerCount()
+        {
+            var gameState = GetRequiredService<IGameStateService>();
+            gameState.UpdatePlayerCount(_players.Count);
         }
     }
 }

@@ -21,10 +21,15 @@ namespace VSBot.Commands
         public void ExecuteCommand(ICommandContext context)
         {
             var player = context.Sender;
+            var hostname = _core.ConVar.Find<string>("hostname")?.Value;
+            var currentMap = _gameStateService.CurrentMap;
+            var playerCount = _gameStateService.PlayerCount;
+            var maxClients = _core.Engine.GlobalVars.MaxClients;
 
-            context.Reply($" {ChatColors.Default}----- {ChatColors.Purple}{_core.ConVar.Find<string>("hostname")?.Value} {ChatColors.Default}-----");
+            context.Reply($" {ChatColors.Default}----- {ChatColors.Purple}{hostname} {ChatColors.Default}-----");
             context.Reply($" {Utility.GetTeamColorByPlayer(player)}Server local time: {ChatColors.Red}{DateTime.Now}");
-            context.Reply($" {Utility.GetTeamColorByPlayer(player)}Current map: {ChatColors.Lime}{_gameStateService.CurrentMap}");
+            context.Reply($" {Utility.GetTeamColorByPlayer(player)}Current map: {ChatColors.Lime}{currentMap}");
+            context.Reply($" {Utility.GetTeamColorByPlayer(player)}Player: {ChatColors.Yellow}{playerCount}{ChatColors.Grey}/{maxClients}");
             context.Reply($" {ChatColors.Default}----------");
         }
     }

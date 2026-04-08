@@ -5,8 +5,10 @@ namespace VSBot.Services
     public class GameStateService : IGameStateService
     {
         public string CurrentMap => _currentMap;
+        public int PlayerCount => _playerCount;
 
         private string _currentMap = "Unknown";
+        private int _playerCount = 0;
 
         public void UpdateCurrentMap(string mapName)
         {
@@ -15,5 +17,7 @@ namespace VSBot.Services
 
             _currentMap = mapName;
         }
+
+        public void UpdatePlayerCount(int playerCount) => _playerCount = playerCount;
     }
 }
