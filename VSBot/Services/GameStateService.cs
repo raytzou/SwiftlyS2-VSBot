@@ -1,11 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
+using SwiftlyS2.Shared.Players;
 using VSBot.Services.Interfaces;
 
 namespace VSBot.Services
 {
     public class GameStateService : IGameStateService
     {
-        public int PlayerCount => _playerCount;
+        public IReadOnlyDictionary<ulong, IPlayer> Players => _players;
+        public int PlayerCount => _players.Count;
         public short CurrentRound
         {
             get
@@ -15,7 +17,7 @@ namespace VSBot.Services
         }
         public bool IsWarmup => _isWarmup;
 
-        private int _playerCount = 0;
+        private Dictionary<ulong, IPlayer> _players = [];
         private bool _isWarmup = false;
 
         private readonly ILogger<GameStateService> _logger;
@@ -25,7 +27,20 @@ namespace VSBot.Services
             _logger = logger;
         }
 
-        public void UpdatePlayerCount(int playerCount) => _playerCount = playerCount;
+        public void AddPlayer(IPlayer player)
+        {
+            _players.Add(player.SteamID, player);
+        }
+
+        public void RemovePlayer(ulong SteamID)
+        {
+            _players.Remove(SteamID);
+        }
+
+        public void ClearPlayers()
+        {
+            _players.Clear();
+        }
 
         public void OnWarmupStarted()
         {

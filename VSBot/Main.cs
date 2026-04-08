@@ -43,7 +43,9 @@ namespace VSBot
         private void OnMapLoad(IOnMapLoadEvent @event)
         {
             var mapName = @event.MapName;
+            var gameState = GetRequiredService<IGameStateService>();
 
+            gameState.ClearPlayers();
             Core.Logger.LogInformation("Map start: {mapName}", mapName);
         }
 
@@ -92,12 +94,6 @@ namespace VSBot
             if (_serviceProvider is null)
                 throw new InvalidOperationException("Service provider is null.");
             return _serviceProvider.GetRequiredService<T>();
-        }
-
-        private void UpdatePlayerCount()
-        {
-            var gameState = GetRequiredService<IGameStateService>();
-            gameState.UpdatePlayerCount(_players.Count);
         }
     }
 }

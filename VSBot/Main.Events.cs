@@ -1,15 +1,12 @@
 ﻿using SwiftlyS2.Shared.GameEventDefinitions;
 using SwiftlyS2.Shared.GameEvents;
 using SwiftlyS2.Shared.Misc;
-using SwiftlyS2.Shared.Players;
 using VSBot.Services.Interfaces;
 
 namespace VSBot
 {
     public partial class Main
     {
-        private readonly Dictionary<ulong, IPlayer> _players = [];
-
         [GameEventHandler(HookMode.Post)]
         public HookResult PlayerConnectFullHandler(EventPlayerConnectFull @event)
         {
@@ -18,8 +15,9 @@ namespace VSBot
 
             if (!player.IsFakeClient)
             {
-                _players.Add(player.SteamID, player);
-                UpdatePlayerCount();
+                var gameState = GetRequiredService<IGameStateService>();
+
+                gameState.AddPlayer(player);
             }
 
             return HookResult.Continue;
@@ -33,8 +31,9 @@ namespace VSBot
 
             if (!player.IsFakeClient)
             {
-                _players.Remove(player.SteamID);
-                UpdatePlayerCount();
+                var gameState = GetRequiredService<IGameStateService>();
+
+                gameState.RemovePlayer(player.SteamID);
             }
 
             return HookResult.Continue;
