@@ -19,6 +19,7 @@ namespace VSBot.Commands
             var player = context.Sender;
             var isConsole = player is null;
             var commands = _core.Command.GetAllCommandsInfo()
+                .ExceptBy(["debug"], e => e.CommandName)
                 .Where(w =>
                     isConsole ||
                     string.IsNullOrEmpty(w.Permission) ||

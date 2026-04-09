@@ -58,5 +58,16 @@ namespace VSBot.Modules
         {
             _cvar.ExecuteCommand(context);
         }
+
+        /// <summary>
+        /// Debug-only. Implement temporarily for local testing only.
+        /// Do not commit.
+        /// </summary>
+        /// <param name="context"></param>
+        [Command(name: "debug", permission: "root", helpText: "*")]
+        public void OnDebugCommand(ICommandContext context)
+        {
+
+        }
     }
 }
