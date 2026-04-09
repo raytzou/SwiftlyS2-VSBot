@@ -22,9 +22,9 @@ namespace VSBot.Modules
             )
         {
             _core = core;
+            _logger = logger;
             _info = info;
             _help = help;
-            _logger = logger;
             _map = map;
             _cvar = cvar;
         }
