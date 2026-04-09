@@ -10,17 +10,20 @@ namespace VSBot.Modules
         private readonly ISwiftlyCore _core;
         private readonly ILogger<CommandModule> _logger;
         private readonly IInfo _info;
+        private readonly IHelp _help;
         private readonly IMap _map;
         private readonly ICvar _cvar;
 
         public CommandModule(ISwiftlyCore core, ILogger<CommandModule> logger
             , IInfo info
+            , IHelp help
             , IMap map
             , ICvar cvar
             )
         {
             _core = core;
             _info = info;
+            _help = help;
             _logger = logger;
             _map = map;
             _cvar = cvar;
@@ -32,19 +35,25 @@ namespace VSBot.Modules
             _logger.LogInformation("Command Module loaded.");
         }
 
-        [Command("info")]
+        [Command(name: "info", helpText: "Prints server information")]
         public void OnInfoCommand(ICommandContext context)
         {
             _info.ExecuteCommand(context);
         }
 
-        [Command(name: "map", permission: "admin.changemap")]
+        [Command(name: "help", helpText: "Lists all available commands")]
+        public void OnHelpCommand(ICommandContext context)
+        {
+            _help.ExecuteCommand(context);
+        }
+
+        [Command(name: "map", permission: "admin.changemap", helpText: "Changes the current map to the specific map")]
         public void OnMapCommand(ICommandContext context)
         {
             _map.ExecuteCommand(context);
         }
 
-        [Command(name: "cvar", permission: "admin.cvar")]
+        [Command(name: "cvar", permission: "admin.cvar", helpText: "Update the specific Console Variable")]
         public void OnCvarCommand(ICommandContext context)
         {
             _cvar.ExecuteCommand(context);
