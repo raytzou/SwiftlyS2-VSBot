@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.Events;
@@ -6,6 +7,7 @@ using SwiftlyS2.Shared.Plugins;
 using System.Reflection;
 using VSBot.Classes;
 using VSBot.Commands.Interfaces;
+using VSBot.Models;
 using VSBot.Modules;
 using VSBot.Services;
 using VSBot.Services.Interfaces;
@@ -32,6 +34,10 @@ namespace VSBot
             InitializeCommandModule();
             Utility.Initialize();
             RegisterEvents();
+            Core.Configuration.InitializeJsonWithModel<Config>("config.jsonc", "Main")
+                .Configure(builder => {
+                    builder.AddJsonFile("config.jsonc", optional: false, reloadOnChange: true);
+                });
             Core.Logger.LogInformation("Plugin Loaded.");
         }
 
@@ -51,7 +57,7 @@ namespace VSBot
 
         private void RegisterServices(IServiceCollection services)
         {
-            services.AddSwiftly(Core);
+            services.AddSwiftly(Core).AddOptionsWithValidateOnStart<Config>().BindConfiguration("Main");
             services.AddTransient<CommandModule>();
             services.AddSingleton<IGameStateService, GameStateService>();
         }
