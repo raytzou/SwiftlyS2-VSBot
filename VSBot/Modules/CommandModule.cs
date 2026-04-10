@@ -13,12 +13,14 @@ namespace VSBot.Modules
         private readonly IHelp _help;
         private readonly IMap _map;
         private readonly ICvar _cvar;
+        private readonly IBuy _buy;
 
         public CommandModule(ISwiftlyCore core, ILogger<CommandModule> logger
             , IInfo info
             , IHelp help
             , IMap map
             , ICvar cvar
+            , IBuy buy
             )
         {
             _core = core;
@@ -27,6 +29,7 @@ namespace VSBot.Modules
             _help = help;
             _map = map;
             _cvar = cvar;
+            _buy = buy;
         }
 
         public void Initialize()
@@ -57,6 +60,12 @@ namespace VSBot.Modules
         public void OnCvarCommand(ICommandContext context)
         {
             _cvar.ExecuteCommand(context);
+        }
+
+        [Command(name: "buy", helpText: "Buy items")]
+        public void OnBuyCommand(ICommandContext context)
+        {
+            _buy.ExecuteCommand(context);
         }
 
         /// <summary>

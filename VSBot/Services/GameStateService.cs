@@ -17,9 +17,11 @@ namespace VSBot.Services
             }
         }
         public bool IsWarmup => _isWarmup;
+        public bool IsBuyTime => _isBuyTime;
 
         private Dictionary<ulong, IPlayer> _players = [];
         private bool _isWarmup = false;
+        private bool _isBuyTime = false;
 
         private readonly ISwiftlyCore _core;
         private readonly ILogger<GameStateService> _logger;
@@ -59,6 +61,22 @@ namespace VSBot.Services
 
             _isWarmup = false;
             _logger.LogInformation("Warmup ended");
+        }
+
+        public void OnBuyTimeStart()
+        {
+            if (_isBuyTime) return;
+
+            _isBuyTime = true;
+            _logger.LogInformation("Buy time started.");
+        }
+
+        public void OnBuyTimeEnd()
+        {
+            if (!_isBuyTime) return;
+
+            _isBuyTime = false;
+            _logger.LogInformation("Buy time ended.");
         }
     }
 }

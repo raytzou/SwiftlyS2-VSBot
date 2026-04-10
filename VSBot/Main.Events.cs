@@ -73,5 +73,25 @@ namespace VSBot
 
             return HookResult.Continue;
         }
+
+        [GameEventHandler(HookMode.Post)]
+        public HookResult RoundStartHandler(EventRoundStart @event)
+        {
+            var gameState = GetRequiredService<IGameStateService>();
+
+            gameState.OnBuyTimeStart();
+
+            return HookResult.Continue;
+        }
+
+        [GameEventHandler(HookMode.Post)]
+        public HookResult BuytimeEndedHandler(EventBuytimeEnded @event)
+        {
+            var gameState = GetRequiredService<IGameStateService>();
+
+            gameState.OnBuyTimeEnd();
+
+            return HookResult.Continue;
+        }
     }
 }
