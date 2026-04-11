@@ -17,7 +17,7 @@ namespace VSBot.Commands
         public void ExecuteCommand(ICommandContext context)
         {
             var player = context.Sender;
-            var isConsole = player is null;
+            var isConsole = !context.IsSentByPlayer;
             var commands = _core.Command.GetAllCommandsInfo()
                 .ExceptBy(["debug"], e => e.CommandName)
                 .Where(w =>
