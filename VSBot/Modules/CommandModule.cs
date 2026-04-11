@@ -13,6 +13,7 @@ namespace VSBot.Modules
         private readonly IHelp _help;
         private readonly IMap _map;
         private readonly ICvar _cvar;
+        private readonly IRcon _rcon;
         private readonly IBuy _buy;
 
         public CommandModule(ISwiftlyCore core, ILogger<CommandModule> logger
@@ -20,6 +21,7 @@ namespace VSBot.Modules
             , IHelp help
             , IMap map
             , ICvar cvar
+            , IRcon rcon
             , IBuy buy
             )
         {
@@ -29,6 +31,7 @@ namespace VSBot.Modules
             _help = help;
             _map = map;
             _cvar = cvar;
+            _rcon = rcon;
             _buy = buy;
         }
 
@@ -56,10 +59,16 @@ namespace VSBot.Modules
             _map.ExecuteCommand(context);
         }
 
-        [Command(name: "cvar", permission: "admin.cvar", helpText: "Update the specific Console Variable")]
+        [Command(name: "cvar", permission: "admin.cvar", helpText: "Updates the specific Console Variable")]
         public void OnCvarCommand(ICommandContext context)
         {
             _cvar.ExecuteCommand(context);
+        }
+
+        [Command(name: "rcon", permission: "root", helpText: "Uses Remote Console")]
+        public void OnRconCommand(ICommandContext context)
+        {
+            _rcon.ExecuteCommand(context);
         }
 
         [Command(name: "buy", helpText: "Buy items")]
