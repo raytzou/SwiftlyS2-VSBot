@@ -15,6 +15,7 @@ namespace VSBot.Modules
         private readonly ICvar _cvar;
         private readonly IRcon _rcon;
         private readonly IBuy _buy;
+        private readonly IRevive _revive;
 
         public CommandModule(ISwiftlyCore core, ILogger<CommandModule> logger
             , IInfo info
@@ -23,6 +24,7 @@ namespace VSBot.Modules
             , ICvar cvar
             , IRcon rcon
             , IBuy buy
+            , IRevive revive
             )
         {
             _core = core;
@@ -33,6 +35,7 @@ namespace VSBot.Modules
             _cvar = cvar;
             _rcon = rcon;
             _buy = buy;
+            _revive = revive;
         }
 
         public void Initialize()
@@ -77,6 +80,13 @@ namespace VSBot.Modules
             _buy.ExecuteCommand(context);
         }
 
+        [Command(name: "revive")]
+        [CommandAlias("res")]
+        public void OnReviveCommand(ICommandContext context)
+        {
+            _revive.ExecuteCommand(context);
+        }
+
         /// <summary>
         /// Debug-only. Implement temporarily for local testing only.
         /// Do not commit.
@@ -85,7 +95,9 @@ namespace VSBot.Modules
         [Command(name: "debug", permission: "root", helpText: "*")]
         public void OnDebugCommand(ICommandContext context)
         {
+            var player = context.Sender;
 
+            player.Respawn();
         }
     }
 }

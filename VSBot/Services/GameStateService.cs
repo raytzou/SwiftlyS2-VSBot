@@ -18,10 +18,30 @@ namespace VSBot.Services
         }
         public bool IsWarmup => _isWarmup;
         public bool IsBuyTime => _isBuyTime;
+        public bool IsRoundEnd => _isRoundEnd;
+        public Team HumanTeam
+        {
+            get
+            {
+                var mapName = _core.Engine.GlobalVars.MapName.ToString();
+
+                switch (mapName[..3])
+                {
+                    case "cs_":
+                        return Team.CT;
+                    case "de_":
+                        return Team.T;
+                    default:
+                        _logger.LogWarning("Cannot identify the category of map: {mapName}", mapName);
+                        return Team.T;
+                }
+            }
+        }
 
         private Dictionary<ulong, IPlayer> _players = [];
         private bool _isWarmup = false;
         private bool _isBuyTime = false;
+        private bool _isRoundEnd = false;
 
         private readonly ISwiftlyCore _core;
         private readonly ILogger<GameStateService> _logger;
@@ -52,7 +72,7 @@ namespace VSBot.Services
             if (_isWarmup) return;
 
             _isWarmup = true;
-            _logger.LogInformation("Warmup started.");
+            _logger.LogInformation("Warmup started");
         }
 
         public void OnWarmupEnded()
@@ -68,7 +88,7 @@ namespace VSBot.Services
             if (_isBuyTime) return;
 
             _isBuyTime = true;
-            _logger.LogInformation("Buy time started.");
+            _logger.LogInformation("Buy time started");
         }
 
         public void OnBuyTimeEnd()
@@ -76,7 +96,23 @@ namespace VSBot.Services
             if (!_isBuyTime) return;
 
             _isBuyTime = false;
-            _logger.LogInformation("Buy time ended.");
+            _logger.LogInformation("Buy time ended");
+        }
+
+        public void OnRoundStart()
+        {
+            if (!_isRoundEnd) return;
+
+            _isRoundEnd = false;
+            _logger.LogInformation("Round started");
+        }
+
+        public void OnRoundEnd()
+        {
+            if (_isRoundEnd) return;
+
+            _isRoundEnd = true;
+            _logger.LogInformation("Round ended");
         }
     }
 }

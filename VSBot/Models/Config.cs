@@ -3,5 +3,6 @@
     public class Config
     {
         public bool IsDebug { get; set; } = false;
+        public int ReviveCostScore { get; set; } = 25;
     }
 }

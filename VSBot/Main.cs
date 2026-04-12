@@ -35,7 +35,8 @@ namespace VSBot
             Utility.Initialize();
             RegisterEvents();
             Core.Configuration.InitializeJsonWithModel<Config>("config.jsonc", "Main")
-                .Configure(builder => {
+                .Configure(builder =>
+                {
                     builder.AddJsonFile("config.jsonc", optional: false, reloadOnChange: true);
                 });
             Core.Logger.LogInformation("Plugin Loaded.");
@@ -50,8 +51,11 @@ namespace VSBot
         {
             var mapName = @event.MapName;
             var gameState = GetRequiredService<IGameStateService>();
+            var playerService = GetRequiredService<IPlayerService>();
 
             gameState.ClearPlayers();
+            playerService.ClearPlayerPositions();
+            playerService.ClearPlayerWeaponStatuses();
             Core.Logger.LogInformation("Map start: {mapName}", mapName);
         }
 
@@ -60,6 +64,7 @@ namespace VSBot
             services.AddSwiftly(Core).AddOptionsWithValidateOnStart<Config>().BindConfiguration("Main");
             services.AddTransient<CommandModule>();
             services.AddSingleton<IGameStateService, GameStateService>();
+            services.AddSingleton<IPlayerService, PlayerService>();
         }
 
         private void InitializeCommandModule()
