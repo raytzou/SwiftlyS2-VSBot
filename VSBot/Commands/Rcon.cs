@@ -30,8 +30,11 @@ namespace VSBot.Commands
 
             _core.Engine.ExecuteCommandWithBuffer(rcon, (output) =>
             {
-                context.Reply(output);
-                _logger.LogInformation("{admin} executed RCON command '{rcon}': {output}", admin, rcon, output);
+                _core.Scheduler.NextWorldUpdate(() =>
+                {
+                    context.Reply(output);
+                    _logger.LogInformation("{admin} executed RCON command '{rcon}': {output}", admin, rcon, output);
+                });
             });
         }
     }
