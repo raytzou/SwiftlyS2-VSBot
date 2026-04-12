@@ -11,6 +11,8 @@ namespace VSBot.Commands
         private readonly ILogger<Map> _logger;
         private readonly ISwiftlyCore _core;
 
+        private CancellationTokenSource _changeMapTimer = new();
+
         public Map(ILogger<Map> logger, ISwiftlyCore core)
         {
             _logger = logger;
@@ -35,9 +37,11 @@ namespace VSBot.Commands
 
             var player = context.Sender;
 
+            _changeMapTimer?.Cancel();
+            _changeMapTimer?.Dispose();
             _logger.LogInformation("{admin} changed map to {mapName} at {DT}", player?.Name is null ? "Console" : player.Name, mapName, DateTime.Now);
             _core.PlayerManager.SendChat($"Admin changed map to {mapName}");
-            _core.Scheduler.DelayBySeconds(2, () =>
+            _changeMapTimer = _core.Scheduler.DelayBySeconds(2, () =>
             {
                 if (Utility.IsWorkshopMap(mapName))
                     _core.Engine.ExecuteCommand($"ds_workshop_changelevel {mapName}");
