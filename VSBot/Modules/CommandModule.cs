@@ -12,6 +12,7 @@ namespace VSBot.Modules
         private readonly IInfo _info;
         private readonly IHelp _help;
         private readonly IMap _map;
+        private readonly IMaps _maps;
         private readonly ICvar _cvar;
         private readonly IRcon _rcon;
         private readonly IBuy _buy;
@@ -21,6 +22,7 @@ namespace VSBot.Modules
             , IInfo info
             , IHelp help
             , IMap map
+            , IMaps maps
             , ICvar cvar
             , IRcon rcon
             , IBuy buy
@@ -32,6 +34,7 @@ namespace VSBot.Modules
             _info = info;
             _help = help;
             _map = map;
+            _maps = maps;
             _cvar = cvar;
             _rcon = rcon;
             _buy = buy;
@@ -61,6 +64,13 @@ namespace VSBot.Modules
         {
             _map.ExecuteCommand(context);
         }
+
+        [Command(name: "maps", permission: "admin.changemap", helpText: "Lists all maps")]
+        public void OnMapsCommand(ICommandContext context)
+        {
+            _maps.ExecuteCommand(context);
+        }
+
 
         [Command(name: "cvar", permission: "admin.cvar", helpText: "Updates the specific Console Variable")]
         public void OnCvarCommand(ICommandContext context)
