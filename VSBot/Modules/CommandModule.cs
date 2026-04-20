@@ -105,9 +105,6 @@ namespace VSBot.Modules
         [Command(name: "debug", permission: "root", helpText: "*")]
         public void OnDebugCommand(ICommandContext context)
         {
-            var player = context.Sender;
-
-            player.Respawn();
         }
     }
 }
