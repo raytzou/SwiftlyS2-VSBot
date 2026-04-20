@@ -171,7 +171,7 @@ namespace VSBot.Commands
             catch (Exception ex)
             {
                 player.SendChat("[sw] Failed to buy weapon. Please contact admin!");
-                _logger.LogError("Buy Command error {error}", ex);
+                _logger.LogError(ex, "Buy Command error");
             }
         }
     }
