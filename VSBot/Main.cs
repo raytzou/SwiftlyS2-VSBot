@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared;
+using SwiftlyS2.Shared.GameEventDefinitions;
 using SwiftlyS2.Shared.Plugins;
 using System.Reflection;
 using VSBot.Classes;
@@ -43,6 +44,8 @@ namespace VSBot
 
         public override void Unload()
         {
+            UnregisterEvents();
+            UnhookGameEvents();
             _serviceProvider?.Dispose();
         }
 
@@ -85,6 +88,23 @@ namespace VSBot
         private void RegisterEvents()
         {
             Core.Event.OnMapLoad += OnMapLoad;
+        }
+
+        private void UnregisterEvents()
+        {
+            Core.Event.OnMapLoad -= OnMapLoad;
+        }
+
+        private void UnhookGameEvents()
+        {
+            Core.GameEvent.UnhookPost<EventPlayerConnectFull>();
+            Core.GameEvent.UnhookPost<EventPlayerDisconnect>();
+            Core.GameEvent.UnhookPost<EventRoundAnnounceWarmup>();
+            Core.GameEvent.UnhookPost<EventWarmupEnd>();
+            Core.GameEvent.UnhookPost<EventRoundStart>();
+            Core.GameEvent.UnhookPost<EventRoundEnd>();
+            Core.GameEvent.UnhookPost<EventBuytimeEnded>();
+            Core.GameEvent.UnhookPost<EventPlayerDeath>();
         }
 
         private T GetRequiredService<T>() where T : notnull
