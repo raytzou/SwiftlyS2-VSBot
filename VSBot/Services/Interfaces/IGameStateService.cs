@@ -11,6 +11,9 @@ namespace VSBot.Services.Interfaces
         public bool IsBuyTime { get; }
         public bool IsRoundEnd { get; }
         public Team HumanTeam { get; }
+
+        public event Action? MapReady;
+
         public void AddPlayer(IPlayer player);
         public void RemovePlayer(ulong SteamID);
         public void ClearPlayers();
@@ -20,5 +23,6 @@ namespace VSBot.Services.Interfaces
         public void OnBuyTimeEnd();
         public void OnRoundStart();
         public void OnRoundEnd();
+        public void OnMapStart();
     }
 }

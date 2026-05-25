@@ -38,6 +38,8 @@ namespace VSBot.Services
             }
         }
 
+        public event Action? MapReady;
+
         private Dictionary<ulong, IPlayer> _players = [];
         private bool _isWarmup = false;
         private bool _isBuyTime = false;
@@ -113,6 +115,11 @@ namespace VSBot.Services
 
             _isRoundEnd = true;
             _logger.LogInformation("Round ended");
+        }
+
+        public void OnMapStart()
+        {
+            _core.Scheduler.NextWorldUpdate(() => MapReady?.Invoke());
         }
     }
 }

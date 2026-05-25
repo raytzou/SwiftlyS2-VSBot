@@ -27,6 +27,7 @@ namespace VSBot
             gameState.ClearPlayers();
             playerService.ClearPlayerPositions();
             playerService.ClearPlayerWeaponStatuses();
+            gameState.OnMapStart();
             Core.Logger.LogInformation("Map start: {mapName}", mapName);
         }
     }
