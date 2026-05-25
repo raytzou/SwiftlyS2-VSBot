@@ -20,10 +20,7 @@ namespace VSBot
             if (config.CurrentValue.IsDebug)
             {
                 Core.Logger.LogWarning("Server debug mode is on");
-                Core.Scheduler.NextWorldUpdate(() =>
-                {
-                    Core.Engine.ExecuteCommand("sv_cheats 1");
-                });
+                gameState.MapReady += EnableCheats;
             }
 
             gameState.ClearPlayers();
@@ -32,6 +29,14 @@ namespace VSBot
             gameState.OnMapStart();
             botModule.OnMapStart();
             Core.Logger.LogInformation("Map start: {mapName}", mapName);
+        }
+
+        private void EnableCheats()
+        {
+            var gameState = GetRequiredService<IGameStateService>();
+
+            gameState.MapReady -= EnableCheats;
+            Core.Engine.ExecuteCommand("sv_cheats 1");
         }
     }
 }
