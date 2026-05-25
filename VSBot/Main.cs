@@ -53,6 +53,7 @@ namespace VSBot
         {
             services.AddSwiftly(Core).AddOptionsWithValidateOnStart<Config>().BindConfiguration("Main");
             services.AddTransient<CommandModule>();
+            services.AddTransient<BotModule>();
             services.AddSingleton<IGameStateService, GameStateService>();
             services.AddSingleton<IPlayerService, PlayerService>();
         }

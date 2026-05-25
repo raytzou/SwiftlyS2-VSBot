@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using SwiftlyS2.Shared.Events;
 using VSBot.Models;
+using VSBot.Modules;
 using VSBot.Services.Interfaces;
 
 namespace VSBot
@@ -14,6 +15,7 @@ namespace VSBot
             var gameState = GetRequiredService<IGameStateService>();
             var playerService = GetRequiredService<IPlayerService>();
             var config = GetRequiredService<IOptionsMonitor<Config>>();
+            var botModule = GetRequiredService<BotModule>();
 
             if (config.CurrentValue.IsDebug)
             {
@@ -28,6 +30,7 @@ namespace VSBot
             playerService.ClearPlayerPositions();
             playerService.ClearPlayerWeaponStatuses();
             gameState.OnMapStart();
+            botModule.OnMapStart();
             Core.Logger.LogInformation("Map start: {mapName}", mapName);
         }
     }
