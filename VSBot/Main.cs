@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared;
-using SwiftlyS2.Shared.Events;
 using SwiftlyS2.Shared.Plugins;
 using System.Reflection;
 using VSBot.Classes;
@@ -45,18 +44,6 @@ namespace VSBot
         public override void Unload()
         {
             _serviceProvider?.Dispose();
-        }
-
-        private void OnMapLoad(IOnMapLoadEvent @event)
-        {
-            var mapName = @event.MapName;
-            var gameState = GetRequiredService<IGameStateService>();
-            var playerService = GetRequiredService<IPlayerService>();
-
-            gameState.ClearPlayers();
-            playerService.ClearPlayerPositions();
-            playerService.ClearPlayerWeaponStatuses();
-            Core.Logger.LogInformation("Map start: {mapName}", mapName);
         }
 
         private void RegisterServices(IServiceCollection services)
