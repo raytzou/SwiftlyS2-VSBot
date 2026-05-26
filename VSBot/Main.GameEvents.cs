@@ -7,6 +7,7 @@ using SwiftlyS2.Shared.Players;
 using VSBot.Classes;
 using VSBot.Commands.Interfaces;
 using VSBot.Models;
+using VSBot.Modules;
 using VSBot.Services.Interfaces;
 using static SwiftlyS2.Shared.Helper;
 
@@ -79,8 +80,10 @@ namespace VSBot
         public HookResult WarmupEndHandler(EventWarmupEnd @event)
         {
             var gameState = GetRequiredService<IGameStateService>();
+            var botModule = GetRequiredService<BotModule>();
 
             gameState.OnWarmupEnded();
+            botModule.OnWarmupEnd();
 
             return HookResult.Continue;
         }

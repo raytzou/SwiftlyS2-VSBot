@@ -15,6 +15,8 @@ namespace VSBot.Modules
         private readonly IGameStateService _gameStateService;
         private readonly IOptionsMonitor<Config> _config;
 
+        private int _level = 0;
+
         public BotModule(ISwiftlyCore core, ILogger<BotModule> logger, IGameStateService gameStateService, IOptionsMonitor<Config> config)
         {
             _core = core;
@@ -29,6 +31,19 @@ namespace VSBot.Modules
 
             StopBotMoving();
             _gameStateService.MapReady += AddSpecialBot;
+        }
+
+        public void OnWarmupEnd()
+        {
+            _logger.LogInformation("BotModule OnWarmupEnd");
+
+            if (!_config.CurrentValue.IsDebug)
+            {
+                DisableCheats();
+            }
+
+            SetDifficulty(0, 0);
+            FillNormalBot();
         }
 
         private void StopBotMoving()
@@ -77,6 +92,53 @@ namespace VSBot.Modules
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 _core.Engine.ExecuteCommand("bot_kick");
+            });
+        }
+
+        private void DisableCheats()
+        {
+            _core.Scheduler.NextWorldUpdate(() =>
+            {
+                _core.Engine.ExecuteCommand("sw_cvar bot_stop 0");
+                _core.Engine.ExecuteCommand("sv_cheats 0");
+            });
+        }
+
+        private void SetDifficulty(int winStreak, int looseStreak)
+        {
+            if (winStreak >= 1 && _level < 7)
+                _level++;
+            else if (looseStreak >= 2 && _level > 1)
+                _level--;
+        }
+
+        private void FillNormalBot()
+        {
+            _logger.LogInformation("BotModule FillNormalBot");
+
+            var difficulty = _level switch
+            {
+                0 => BotProfile.Difficulty.easy,
+                1 or 2 => BotProfile.Difficulty.normal,
+                3 or 4 => BotProfile.Difficulty.hard,
+                5 or 6 or 7 => BotProfile.Difficulty.expert,
+                _ => BotProfile.Difficulty.easy,
+            };
+            var humanTeam = _gameStateService.HumanTeam;
+            var botTeam = humanTeam == Team.CT ? Team.T : Team.CT;
+
+            _core.Scheduler.NextWorldUpdate(() =>
+            {
+                for (int i = 1; i <= _config.CurrentValue.BotQuota - BotProfile.Special.Count; i++)
+                {
+                    string botName = $"\"[{BotProfile.Grade[_level]}]{BotProfile.NameGroup.Keys.ToList()[_level]}#{i:D2}\"";
+                    var team = (botTeam == Team.CT) ? "ct" : "t";
+
+                    _core.Engine.ExecuteCommand($"bot_add_{team} {difficulty} {botName}");
+
+                    if (_config.CurrentValue.IsDebug)
+                        _logger.LogInformation("bot_add_{team} {difficulty} {botName}", team, difficulty, botName);
+                }
             });
         }
     }
