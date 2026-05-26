@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using SwiftlyS2.Shared.Events;
 using SwiftlyS2.Shared.SchemaDefinitions;
+using SwiftlyS2.Shared.Schemas;
 using VSBot.Models;
 using VSBot.Modules;
 using VSBot.Services.Interfaces;
@@ -59,37 +60,8 @@ namespace VSBot
             if (CTSpawnPoints.Count == 0)
                 Core.Logger.LogWarning("CT Spawn point not found. map: {mapName}", mapName);
 
-            // Check and duplicate T spawn points if needed
-            if (TSpawnPoints.Count > 0 && TSpawnPoints.Count < spawnPointCount)
-            {
-                int neededSpawns = spawnPointCount - TSpawnPoints.Count;
-                Core.Logger.LogInformation("T team has {current} spawn points, duplicating {needed} more to reach {target}",
-                    TSpawnPoints.Count, neededSpawns, spawnPointCount);
-
-                for (int i = 0; i < neededSpawns; i++)
-                {
-                    var randomSpawnPoint = TSpawnPoints[Random.Shared.Next(TSpawnPoints.Count)];
-                    var newTSpawnPoint = Core.EntitySystem.CreateEntityByDesignerName<CInfoPlayerTerrorist>("info_player_terrorist");
-                    newTSpawnPoint!.Teleport(randomSpawnPoint.AbsOrigin, randomSpawnPoint.AbsRotation, randomSpawnPoint.AbsVelocity);
-                    newTSpawnPoint.DispatchSpawn();
-                }
-            }
-
-            // Check and duplicate CT spawn points if needed
-            if (CTSpawnPoints.Count > 0 && CTSpawnPoints.Count < spawnPointCount)
-            {
-                int neededSpawns = spawnPointCount - CTSpawnPoints.Count;
-                Core.Logger.LogInformation("CT team has {current} spawn points, duplicating {needed} more to reach {target}",
-                    CTSpawnPoints.Count, neededSpawns, spawnPointCount);
-
-                for (int i = 0; i < neededSpawns; i++)
-                {
-                    var randomSpawnPoint = CTSpawnPoints[Random.Shared.Next(CTSpawnPoints.Count)];
-                    var newCTSpawnPoint = Core.EntitySystem.CreateEntityByDesignerName<CInfoPlayerCounterterrorist>("info_player_counterterrorist");
-                    newCTSpawnPoint!.Teleport(randomSpawnPoint.AbsOrigin, randomSpawnPoint.AbsRotation, randomSpawnPoint.AbsVelocity);
-                    newCTSpawnPoint.DispatchSpawn();
-                }
-            }
+            DuplicateSpawnPoints<CInfoPlayerTerrorist>(TSpawnPoints, "T", "info_player_terrorist", spawnPointCount);
+            DuplicateSpawnPoints<CInfoPlayerCounterterrorist>(CTSpawnPoints, "CT", "info_player_counterterrorist", spawnPointCount);
             Core.Scheduler.NextWorldUpdate(() =>
             {
                 var TSpawnPointCount = Core.EntitySystem.GetAllEntitiesByDesignerName<SpawnPoint>("info_player_terrorist").Count();
@@ -98,6 +70,24 @@ namespace VSBot
                 Core.Logger.LogInformation("TSpawnPointCount: {count}", TSpawnPointCount);
                 Core.Logger.LogInformation("CTSpawnPoints: {count}", CTSpawnPointCount);
             });
+        }
+
+        private void DuplicateSpawnPoints<T>(List<SpawnPoint> spawnPoints, string teamLabel, string designerName, int targetCount)
+            where T : class, SpawnPoint, ISchemaClass<T>
+        {
+            if (spawnPoints.Count == 0 || spawnPoints.Count >= targetCount) return;
+
+            int needed = targetCount - spawnPoints.Count;
+            Core.Logger.LogInformation("{team} team has {current} spawn points, duplicating {needed} more to reach {target}",
+                teamLabel, spawnPoints.Count, needed, targetCount);
+
+            for (int i = 0; i < needed; i++)
+            {
+                var src = spawnPoints[Random.Shared.Next(spawnPoints.Count)];
+                var newPoint = Core.EntitySystem.CreateEntityByDesignerName<T>(designerName);
+                newPoint!.Teleport(src.AbsOrigin, src.AbsRotation, src.AbsVelocity);
+                newPoint.DispatchSpawn();
+            }
         }
     }
 }
