@@ -106,7 +106,7 @@ namespace VSBot.Services
             if (!_isRoundEnd) return;
 
             _isRoundEnd = false;
-            _logger.LogInformation("Round started");
+            _logger.LogInformation("Round started, round: {roundCount}", CurrentRound);
         }
 
         public void OnRoundEnd()
