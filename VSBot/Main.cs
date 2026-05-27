@@ -34,6 +34,7 @@ namespace VSBot
             InitializeCommandModule();
             Utility.Initialize();
             RegisterEvents();
+            GetRequiredService<IPatchService>().ApplyAllAutoPatches();
             Core.Configuration.InitializeJsonWithModel<Config>("config.jsonc", "Main")
                 .Configure(builder =>
                 {
@@ -54,6 +55,8 @@ namespace VSBot
             services.AddSwiftly(Core).AddOptionsWithValidateOnStart<Config>().BindConfiguration("Main");
             services.AddTransient<CommandModule>();
             services.AddTransient<BotModule>();
+            services.AddSingleton<INativeMemoryService, NativeMemoryService>();
+            services.AddSingleton<IPatchService, PatchService>();
             services.AddSingleton<IGameStateService, GameStateService>();
             services.AddSingleton<IPlayerService, PlayerService>();
         }
