@@ -120,6 +120,8 @@ namespace VSBot.Modules
                 _level++;
             else if (looseStreak >= 2 && _level > 1)
                 _level--;
+
+            _logger.LogInformation("SetDifficulty, level: {level}", _level);
         }
 
         private void FillNormalBot()
