@@ -137,7 +137,7 @@ namespace VSBot.Classes
             player.PlayerPawn.ItemServices.GiveItem(weaponEntity);
         }
 
-        public static string? GetEntityNameByIndex(ItemDefinitionIndex index)
+        public static string GetEntityNameByIndex(ItemDefinitionIndex index)
         {
             if (index == ItemDefinitionIndex.Galilar)
                 return "weapon_galil";
@@ -147,11 +147,8 @@ namespace VSBot.Classes
 
             var enumName = index.ToString();
             var snakeCase = Regex.Replace(enumName, @"(?<=[a-z0-9])(?=[A-Z])", "_").ToLowerInvariant();
-            var entity = $"weapon_{snakeCase}";
 
-            return WeaponMenu.Any(w => w.EntityName.Equals(entity, StringComparison.OrdinalIgnoreCase))
-                ? entity
-                : null;
+            return $"weapon_{snakeCase}";
         }
     }
 }
