@@ -114,7 +114,7 @@ namespace VSBot.Modules
 
         private void FillNormalBot()
         {
-            _logger.LogInformation("BotModule FillNormalBot");
+            _logger.LogInformation("FillNormalBot");
 
             var difficulty = _level switch
             {
