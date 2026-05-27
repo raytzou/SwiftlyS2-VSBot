@@ -1,4 +1,6 @@
-﻿using SwiftlyS2.Shared.Players;
+﻿using SwiftlyS2.Shared.Helpers;
+using SwiftlyS2.Shared.Players;
+using System.Text.RegularExpressions;
 
 namespace VSBot.Classes
 {
@@ -133,6 +135,23 @@ namespace VSBot.Classes
                 throw new InvalidOperationException("ItemService is null or invalid");
 
             player.PlayerPawn.ItemServices.GiveItem(weaponEntity);
+        }
+
+        public static string? GetEntityNameByIndex(ItemDefinitionIndex index)
+        {
+            if (index == ItemDefinitionIndex.Galilar)
+                return "weapon_galil";
+
+            if (index == ItemDefinitionIndex.HkP2000)
+                return "weapon_hkp2000";
+
+            var enumName = index.ToString();
+            var snakeCase = Regex.Replace(enumName, @"(?<=[a-z0-9])(?=[A-Z])", "_").ToLowerInvariant();
+            var entity = $"weapon_{snakeCase}";
+
+            return WeaponMenu.Any(w => w.EntityName.Equals(entity, StringComparison.OrdinalIgnoreCase))
+                ? entity
+                : null;
         }
     }
 }
