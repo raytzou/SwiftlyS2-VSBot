@@ -28,7 +28,7 @@ namespace VSBot.Modules
 
         public void OnMapStart()
         {
-            _logger.LogInformation("BotModule OnMapStart");
+            _logger.LogInformation("{moduleName} {methodName}", nameof(BotModule), nameof(OnMapStart));
 
             DisableBotMovement();
             _gameStateService.MapReady += AddSpecialBot;
@@ -36,7 +36,7 @@ namespace VSBot.Modules
 
         public void OnWarmupEnd()
         {
-            _logger.LogInformation("BotModule OnWarmupEnd");
+            _logger.LogInformation("{moduleName} {methodName}", nameof(BotModule), nameof(OnWarmupEnd));
 
             if (!_config.CurrentValue.IsDebug)
             {
@@ -50,7 +50,7 @@ namespace VSBot.Modules
 
         public void OnRoundStart()
         {
-            _logger.LogInformation("BotModule OnRoundStart");
+            _logger.LogInformation("{moduleName} {methodName}", nameof(BotModule), nameof(OnRoundStart));
 
             AllowAllBotsPickupWeapon();
             SetAllBotMoneyToZero();
@@ -126,7 +126,7 @@ namespace VSBot.Modules
 
         private void DisableBotMovement()
         {
-            _logger.LogInformation("DisableBotMovement");
+            _logger.LogInformation("{methodName}", nameof(DisableBotMovement));
 
             _core.Scheduler.NextWorldUpdate(() =>
             {
@@ -137,7 +137,7 @@ namespace VSBot.Modules
         private void AddSpecialBot()
         {
             _gameStateService.MapReady -= AddSpecialBot;
-            _logger.LogInformation("AddSpecialBot");
+            _logger.LogInformation("{methodName}", nameof(AddSpecialBot));
 
             var humanTeam = _gameStateService.HumanTeam;
             var botTeam = humanTeam == Team.CT ? Team.T : Team.CT;
@@ -163,7 +163,7 @@ namespace VSBot.Modules
 
         private void KickBot()
         {
-            _logger.LogInformation("KickBot");
+            _logger.LogInformation("{methodName}", nameof(KickBot));
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 _core.Engine.ExecuteCommand("bot_kick");
@@ -172,7 +172,7 @@ namespace VSBot.Modules
 
         private void DisableCheats()
         {
-            _logger.LogInformation("DisableCheats");
+            _logger.LogInformation("{methodName}", nameof(DisableCheats));
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 _core.Engine.ExecuteCommand("sv_cheats 0");
@@ -181,7 +181,7 @@ namespace VSBot.Modules
 
         private void EnableBotMovement()
         {
-            _logger.LogInformation("EnableBotMovement");
+            _logger.LogInformation("{methodName}", nameof(EnableBotMovement));
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 _core.Engine.ExecuteCommand("sw_cvar bot_stop 0");
@@ -195,12 +195,12 @@ namespace VSBot.Modules
             else if (looseStreak >= 2 && _level > 1)
                 _level--;
 
-            _logger.LogInformation("SetDifficulty, level: {level}", _level);
+            _logger.LogInformation("{methodName}: level: {level}", nameof(SetDifficulty), _level);
         }
 
         private void FillNormalBot()
         {
-            _logger.LogInformation("FillNormalBot");
+            _logger.LogInformation("{methodName}", nameof(FillNormalBot));
 
             var difficulty = _level switch
             {
@@ -230,7 +230,7 @@ namespace VSBot.Modules
 
         private void SetBotMoney(string botName, int amount)
         {
-            _logger.LogInformation("SetBotMoney: bot {botName}, amount {amount}", botName, amount);
+            _logger.LogInformation("{methodName}: bot {botName}, amount {amount}", nameof(SetBotMoney), botName, amount);
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 var bot = _core.PlayerManager
@@ -239,13 +239,13 @@ namespace VSBot.Modules
 
                 if (bot is null || !bot.IsValid)
                 {
-                    _logger.LogWarning("SetBotMoney: bot {botName} is null or invalid", botName);
+                    _logger.LogWarning("{methodName}: bot {botName} is null or invalid", nameof(SetBotMoney), botName);
                     return;
                 }
 
                 if (bot.Controller.InGameMoneyServices is null)
                 {
-                    _logger.LogWarning("SetBotMoney: bot {botName} is null", botName);
+                    _logger.LogWarning("{methodName}: bot {botName} is null", nameof(SetBotMoney), botName);
                     return;
                 }
 
@@ -254,14 +254,14 @@ namespace VSBot.Modules
 
                 if (_config.CurrentValue.IsDebug)
                 {
-                    _logger.LogInformation("SetBotMoney: bot {botName} StartAccount={startAccount} Account={account}", botName, bot.Controller.InGameMoneyServices.StartAccount, bot.Controller.InGameMoneyServices.Account);
+                    _logger.LogInformation("{methodName}: bot {botName} StartAccount={startAccount} Account={account}", nameof(SetBotMoney), botName, bot.Controller.InGameMoneyServices.StartAccount, bot.Controller.InGameMoneyServices.Account);
                 }
             });
         }
 
         private void SetBotWeapon(string botName, ItemDefinitionIndex index)
         {
-            _logger.LogInformation("SetBotWeapon: bot {botName}, item {item}", botName, index);
+            _logger.LogInformation("{methodName}: bot {botName}, item {item}", nameof(SetBotWeapon), botName, index);
 
             var bot = _core.PlayerManager
                 .GetBots()
@@ -269,7 +269,7 @@ namespace VSBot.Modules
 
             if (bot is null || !bot.IsValid || bot.PlayerPawn is null)
             {
-                _logger.LogWarning("SetBotWeapon: bot {botName} is null or invalid", botName);
+                _logger.LogWarning("{methodName}: bot {botName} is null or invalid", nameof(SetBotWeapon), botName);
                 return;
             }
 
@@ -279,7 +279,7 @@ namespace VSBot.Modules
 
         private void RemoveBotWeapon(string botName)
         {
-            _logger.LogInformation("RemoveBotWeapon: bot {botName}", botName);
+            _logger.LogInformation("{methodName}: bot {botName}", nameof(RemoveBotWeapon), botName);
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 var bot = _core.PlayerManager
@@ -288,13 +288,13 @@ namespace VSBot.Modules
 
                 if (bot is null || !bot.IsValid || bot.PlayerPawn is null)
                 {
-                    _logger.LogWarning("RemoveBotWeapon: bot {botName} is null or invalid", botName);
+                    _logger.LogWarning("{methodName}: bot {botName} is null or invalid", nameof(RemoveBotWeapon), botName);
                     return;
                 }
 
                 if (bot.PlayerPawn.ItemServices is null)
                 {
-                    _logger.LogWarning("RemoveBotWeapon: bot {botName} item service is null", botName);
+                    _logger.LogWarning("{methodName}: bot {botName} item service is null", nameof(RemoveBotWeapon), botName);
                     return;
                 }
 
@@ -305,18 +305,18 @@ namespace VSBot.Modules
                 {
                     if (bot.PlayerPawn.WeaponServices is null)
                     {
-                        _logger.LogWarning("RemoveBotWeapon: bot {botName} weapon service is null, skip checking weapon count", botName);
+                        _logger.LogWarning("{methodName}: bot {botName} weapon service is null, skip checking weapon count", nameof(RemoveBotWeapon), botName);
                         return;
                     }
 
-                    _logger.LogInformation("RemoveBotWeapon: bot {botName} weapon count={count}", botName, bot.PlayerPawn.WeaponServices.MyWeapons.Count);
+                    _logger.LogInformation("{methodName}: bot {botName} weapon count={count}", nameof(RemoveBotWeapon), botName, bot.PlayerPawn.WeaponServices.MyWeapons.Count);
                 }
             });
         }
 
         private void GiveBotWeapon(string botName, ItemDefinitionIndex index)
         {
-            _logger.LogInformation("GiveBotWeapon: bot {botName} item {index}", botName, index);
+            _logger.LogInformation("{methodName}: bot {botName} item {index}", nameof(GiveBotWeapon), botName, index);
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 var bot = _core.PlayerManager
@@ -325,13 +325,13 @@ namespace VSBot.Modules
 
                 if (bot is null || !bot.IsValid || bot.PlayerPawn is null)
                 {
-                    _logger.LogWarning("GiveBotWeapon: bot {botName} is null or invalid", botName);
+                    _logger.LogWarning("{methodName}: bot {botName} is null or invalid", nameof(GiveBotWeapon), botName);
                     return;
                 }
 
                 if (bot.PlayerPawn.ItemServices is null)
                 {
-                    _logger.LogWarning("GiveBotWeapon: bot {botName} item service is null", botName);
+                    _logger.LogWarning("{methodName}: bot {botName} item service is null", nameof(GiveBotWeapon), botName);
                     return;
                 }
 
@@ -343,18 +343,18 @@ namespace VSBot.Modules
                 {
                     if (bot.PlayerPawn.WeaponServices is null)
                     {
-                        _logger.LogWarning("GiveBotWeapon: bot {botName} weapon service is null, skip checking weapon count", botName);
+                        _logger.LogWarning("{methodName}: bot {botName} weapon service is null, skip checking weapon count", nameof(GiveBotWeapon), botName);
                         return;
                     }
 
-                    _logger.LogInformation("GiveBotWeapon: bot {botName} weapon count={count}", botName, bot.PlayerPawn.WeaponServices.MyWeapons.Count);
+                    _logger.LogInformation("{methodName}: bot {botName} weapon count={count}", nameof(GiveBotWeapon), botName, bot.PlayerPawn.WeaponServices.MyWeapons.Count);
                 }
             });
         }
 
         private void SetBotScore(string botName, int amount)
         {
-            _logger.LogInformation("SetBotScore: bot {botName} amount {amount}", botName, amount);
+            _logger.LogInformation("{methodName}: bot {botName} amount {amount}", nameof(SetBotScore), botName, amount);
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 var bot = _core.PlayerManager
@@ -363,7 +363,7 @@ namespace VSBot.Modules
 
                 if (bot is null || !bot.IsValid)
                 {
-                    _logger.LogWarning("SetBotScore: bot {botName} is null or invalid", botName);
+                    _logger.LogWarning("{methodName}: bot {botName} is null or invalid", nameof(SetBotScore), botName);
                     return;
                 }
 
@@ -372,14 +372,14 @@ namespace VSBot.Modules
 
                 if (_config.CurrentValue.IsDebug)
                 {
-                    _logger.LogInformation("SetBotScore: bot {botName} Score={score}", botName, bot.Controller.Score);
+                    _logger.LogInformation("{methodName}: bot {botName} Score={score}", nameof(SetBotScore), botName, bot.Controller.Score);
                 }
             });
         }
 
         private void SetBotHealth(string botName, int amount)
         {
-            _logger.LogInformation("SetBotHealth: bot {botName} amount {amount}", botName, amount);
+            _logger.LogInformation("{methodName}: bot {botName} amount {amount}", nameof(SetBotHealth), botName, amount);
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 var bot = _core.PlayerManager
@@ -388,7 +388,7 @@ namespace VSBot.Modules
 
                 if (bot is null || !bot.IsValid || bot.PlayerPawn is null)
                 {
-                    _logger.LogWarning("SetBotHealth: bot {botName} is null or invalid", botName);
+                    _logger.LogWarning("{methodName}: bot {botName} is null or invalid", nameof(SetBotHealth), botName);
                     return;
                 }
 
@@ -397,14 +397,14 @@ namespace VSBot.Modules
 
                 if (_config.CurrentValue.IsDebug)
                 {
-                    _logger.LogInformation("SetBotHealth: bot {botName} Health={health}", botName, bot.PlayerPawn.Health);
+                    _logger.LogInformation("{methodName}: bot {botName} Health={health}", nameof(SetBotHealth), botName, bot.PlayerPawn.Health);
                 }
             });
         }
 
         private void SetBotArmor(string botName, int amount)
         {
-            _logger.LogInformation("SetBotArmor: bot {botName} amount {amount}", botName, amount);
+            _logger.LogInformation("{methodName}: bot {botName} amount {amount}", nameof(SetBotArmor), botName, amount);
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 var bot = _core.PlayerManager
@@ -413,7 +413,7 @@ namespace VSBot.Modules
 
                 if (bot is null || !bot.IsValid || bot.PlayerPawn is null)
                 {
-                    _logger.LogWarning("SetBotArmor: bot {botName} is null or invalid", botName);
+                    _logger.LogWarning("{methodName}: bot {botName} is null or invalid", nameof(SetBotArmor), botName);
                     return;
                 }
 
@@ -422,14 +422,14 @@ namespace VSBot.Modules
 
                 if (_config.CurrentValue.IsDebug)
                 {
-                    _logger.LogInformation("SetBotArmor: bot {botName} ArmorValue={armor}", botName, bot.PlayerPawn.ArmorValue);
+                    _logger.LogInformation("{methodName}: bot {botName} ArmorValue={armor}", nameof(SetBotArmor), botName, bot.PlayerPawn.ArmorValue);
                 }
             });
         }
 
         private void PreventBotPickupWeapon(string botName)
         {
-            _logger.LogInformation("PreventBotPickupWeapon: bot {botName}", botName);
+            _logger.LogInformation("{methodName}: bot {botName}", nameof(PreventBotPickupWeapon), botName);
 
             var buyTime = _core.ConVar.Find<float>("mp_buytime")!.Value;
 
@@ -441,13 +441,13 @@ namespace VSBot.Modules
 
                 if (bot is null || !bot.IsValid || bot.PlayerPawn is null)
                 {
-                    _logger.LogWarning("PreventBotPickupWeapon: bot {botName} is null or invalid", botName);
+                    _logger.LogWarning("{methodName}: bot {botName} is null or invalid", nameof(PreventBotPickupWeapon), botName);
                     return;
                 }
 
                 if (bot.PlayerPawn.WeaponServices is null)
                 {
-                    _logger.LogWarning("PreventBotPickupWeapon: bot {botName} weapon service is null", botName);
+                    _logger.LogWarning("{methodName}: bot {botName} weapon service is null", nameof(PreventBotPickupWeapon), botName);
                     return;
                 }
 
@@ -455,14 +455,14 @@ namespace VSBot.Modules
 
                 if (_config.CurrentValue.IsDebug)
                 {
-                    _logger.LogInformation("PreventBotPickupWeapon: bot {botName} PreventWeaponPickup={PreventWeaponPickup}", botName, bot.PlayerPawn.WeaponServices.PreventWeaponPickup);
+                    _logger.LogInformation("{methodName}: bot {botName} PreventWeaponPickup={PreventWeaponPickup}", nameof(PreventBotPickupWeapon), botName, bot.PlayerPawn.WeaponServices.PreventWeaponPickup);
                 }
             });
         }
 
         private void AllowBotPickupWeapon(string botName)
         {
-            _logger.LogInformation("AllowBotPickupWeapon: bot {botName}", botName);
+            _logger.LogInformation("{methodName}: bot {botName}", nameof(AllowBotPickupWeapon), botName);
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 var bot = _core.PlayerManager
@@ -471,13 +471,13 @@ namespace VSBot.Modules
 
                 if (bot is null || !bot.IsValid || bot.PlayerPawn is null)
                 {
-                    _logger.LogWarning("AllowBotPickupWeapon: bot {botName} is null or invalid", botName);
+                    _logger.LogWarning("{methodName}: bot {botName} is null or invalid", nameof(AllowBotPickupWeapon), botName);
                     return;
                 }
 
                 if (bot.PlayerPawn.WeaponServices is null)
                 {
-                    _logger.LogWarning("AllowBotPickupWeapon: bot {botName} weapon service is null", botName);
+                    _logger.LogWarning("{methodName}: bot {botName} weapon service is null", nameof(AllowBotPickupWeapon), botName);
                     return;
                 }
 
@@ -485,7 +485,7 @@ namespace VSBot.Modules
 
                 if (_config.CurrentValue.IsDebug)
                 {
-                    _logger.LogInformation("AllowBotPickupWeapon: bot {botName} AllowBotPickupWeapon={AllowBotPickupWeapon}", botName, bot.PlayerPawn.WeaponServices.PreventWeaponPickup);
+                    _logger.LogInformation("AllowBo{methodName}tPickupWeapon: bot {botName} AllowBotPickupWeapon={AllowBotPickupWeapon}", nameof(AllowBotPickupWeapon), botName, bot.PlayerPawn.WeaponServices.PreventWeaponPickup);
                 }
             });
         }
