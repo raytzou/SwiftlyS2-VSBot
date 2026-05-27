@@ -103,6 +103,10 @@ namespace VSBot
             playerService.StartTrackingAllPlayerWeapon();
             playerService.TrackPlayerWeapon();
 
+            var botModule = GetRequiredService<BotModule>();
+
+            botModule.OnRoundStart();
+
             return HookResult.Continue;
         }
 
