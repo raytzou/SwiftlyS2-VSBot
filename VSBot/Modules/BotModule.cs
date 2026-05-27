@@ -29,7 +29,7 @@ namespace VSBot.Modules
         {
             _logger.LogInformation("BotModule OnMapStart");
 
-            StopBotMoving();
+            DisableBotMovement();
             _gameStateService.MapReady += AddSpecialBot;
         }
 
@@ -40,15 +40,16 @@ namespace VSBot.Modules
             if (!_config.CurrentValue.IsDebug)
             {
                 DisableCheats();
+                EnableBotMovement();
             }
 
             SetDifficulty(0, 0);
             FillNormalBot();
         }
 
-        private void StopBotMoving()
+        private void DisableBotMovement()
         {
-            _logger.LogInformation("StopBotMoving");
+            _logger.LogInformation("DisableBotMovement");
 
             _core.Scheduler.NextWorldUpdate(() =>
             {
@@ -97,10 +98,19 @@ namespace VSBot.Modules
 
         private void DisableCheats()
         {
+            _logger.LogInformation("DisableCheats");
+            _core.Scheduler.NextWorldUpdate(() =>
+            {
+                _core.Engine.ExecuteCommand("sv_cheats 0");
+            });
+        }
+
+        private void EnableBotMovement()
+        {
+            _logger.LogInformation("EnableBotMovement");
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 _core.Engine.ExecuteCommand("sw_cvar bot_stop 0");
-                _core.Engine.ExecuteCommand("sv_cheats 0");
             });
         }
 
