@@ -25,6 +25,7 @@ namespace VSBot
                 gameState.MapReady += EnableCheats;
             }
 
+            ResetDefaultWeapon();
             gameState.MapReady += AddMoreSpawnPoints;
             gameState.ClearPlayers();
             playerService.ClearPlayerPositions();
@@ -88,6 +89,16 @@ namespace VSBot
                 newPoint!.Teleport(src.AbsOrigin, src.AbsRotation, src.AbsVelocity);
                 newPoint.DispatchSpawn();
             }
+        }
+
+        private void ResetDefaultWeapon()
+        {
+            Core.Engine.ExecuteCommand("mp_ct_default_melee weapon_knife");
+            Core.Engine.ExecuteCommand("mp_t_default_melee weapon_knife");
+            Core.Engine.ExecuteCommand("mp_ct_default_primary \"\"");
+            Core.Engine.ExecuteCommand("mp_t_default_primary \"\"");
+            Core.Engine.ExecuteCommand("mp_ct_default_secondary weapon_hkp2000");
+            Core.Engine.ExecuteCommand("mp_t_default_secondary weapon_glock");
         }
     }
 }

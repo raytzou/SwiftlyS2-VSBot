@@ -31,6 +31,7 @@ namespace VSBot.Modules
             _logger.LogInformation("{moduleName} {methodName}", nameof(BotModule), nameof(OnMapStart));
 
             DisableBotMovement();
+            _gameStateService.MapReady += RemoveKnife;
             _gameStateService.MapReady += AddSpecialBot;
         }
 
@@ -55,7 +56,12 @@ namespace VSBot.Modules
             AllowAllBotsPickupWeapon();
             SetAllBotMoneyToZero();
             SetSpecialBotAttribute();
-            SetSpecialBotWeapon();
+
+            if (_gameStateService.CurrentRound > 1)
+            {
+                SetSpecialBotWeapon();
+            }
+
             PreventAllBotsPickupWeapon();
 
             void SetAllBotMoneyToZero()
@@ -91,9 +97,6 @@ namespace VSBot.Modules
 
             void SetSpecialBotWeapon()
             {
-                if (_gameStateService.CurrentRound < 2)
-                    return;
-
                 if (!AreSpecialBotsAdded())
                 {
                     _logger.LogWarning("{methodName}: Special bots are not added successfully", nameof(SetSpecialBotWeapon));
@@ -127,6 +130,14 @@ namespace VSBot.Modules
                 {
                     AllowBotPickupWeapon(bot.Name);
                 }
+            }
+        }
+
+        public void OnRoundEnd()
+        {
+            if (_gameStateService.CurrentRound > 0)
+            {
+                SetDefaultWeapon();
             }
         }
 
@@ -494,6 +505,40 @@ namespace VSBot.Modules
                     _logger.LogInformation("AllowBo{methodName}tPickupWeapon: bot {botName} AllowBotPickupWeapon={AllowBotPickupWeapon}", nameof(AllowBotPickupWeapon), botName, bot.PlayerPawn.WeaponServices.PreventWeaponPickup);
                 }
             });
+        }
+
+        private void RemoveKnife()
+        {
+            _gameStateService.MapReady -= RemoveKnife;
+
+            var humanTeam = _gameStateService.HumanTeam;
+            var botTeam = humanTeam == Team.CT ? Team.T : Team.CT;
+
+            if (botTeam == Team.CT)
+            {
+                _core.Engine.ExecuteCommand("mp_ct_default_melee \"\"");
+            }
+            else
+            {
+                _core.Engine.ExecuteCommand("mp_t_default_melee \"\"");
+            }
+        }
+
+        private void SetDefaultWeapon()
+        {
+            var humanTeam = _gameStateService.HumanTeam;
+            var botTeam = humanTeam == Team.CT ? Team.T : Team.CT;
+
+            if (botTeam == Team.CT)
+            {
+                _core.Engine.ExecuteCommand("mp_ct_default_secondary \"\"");
+                _core.Engine.ExecuteCommand("mp_ct_default_primary weapon_m4a1");
+            }
+            else
+            {
+                _core.Engine.ExecuteCommand("mp_t_default_secondary \"\"");
+                _core.Engine.ExecuteCommand("mp_t_default_primary weapon_ak47");
+            }
         }
 
         private bool AreSpecialBotsAdded() => _core.PlayerManager.GetBots().Count(bot => bot.Name == BotProfile.Special[0]) == 1 &&
