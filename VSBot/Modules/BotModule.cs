@@ -16,7 +16,7 @@ namespace VSBot.Modules
         private readonly IGameStateService _gameStateService;
         private readonly IOptionsMonitor<Config> _config;
 
-        private int _level = 0;
+        private int _level = 2;
 
         public BotModule(ISwiftlyCore core, ILogger<BotModule> logger, IGameStateService gameStateService, IOptionsMonitor<Config> config)
         {
