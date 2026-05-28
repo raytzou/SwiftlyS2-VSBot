@@ -145,26 +145,26 @@ namespace VSBot.Modules
             _gameStateService.MapReady -= AddSpecialBot;
             _logger.LogInformation("{methodName}", nameof(AddSpecialBot));
 
+            if (AreSpecialBotsAdded())
+                return;
+
             var humanTeam = _gameStateService.HumanTeam;
             var botTeam = humanTeam == Team.CT ? Team.T : Team.CT;
 
-            if (!AreSpecialBotsAdded())
+            KickBot();
+            _core.Scheduler.NextWorldUpdate(() =>
             {
-                KickBot();
-                _core.Scheduler.NextWorldUpdate(() =>
-                {
-                    _core.Engine.ExecuteCommand($"bot_add_{botTeam} {nameof(BotProfile.Difficulty.expert)} {BotProfile.Special[0]}");
-                    _core.Engine.ExecuteCommand($"bot_add_{botTeam} {nameof(BotProfile.Difficulty.expert)} {BotProfile.Special[1]}");
-                    _core.Engine.ExecuteCommand($"bot_add_{botTeam} {nameof(BotProfile.Difficulty.expert)} {BotProfile.Special[2]}");
+                _core.Engine.ExecuteCommand($"bot_add_{botTeam} {nameof(BotProfile.Difficulty.expert)} {BotProfile.Special[0]}");
+                _core.Engine.ExecuteCommand($"bot_add_{botTeam} {nameof(BotProfile.Difficulty.expert)} {BotProfile.Special[1]}");
+                _core.Engine.ExecuteCommand($"bot_add_{botTeam} {nameof(BotProfile.Difficulty.expert)} {BotProfile.Special[2]}");
 
-                    if (_config.CurrentValue.IsDebug)
-                    {
-                        _core.Logger.LogInformation("bot_add_{botTeam} {difficulty} {botName}", botTeam, nameof(BotProfile.Difficulty.expert), BotProfile.Special[0]);
-                        _core.Logger.LogInformation("bot_add_{botTeam} {difficulty} {botName}", botTeam, nameof(BotProfile.Difficulty.expert), BotProfile.Special[1]);
-                        _core.Logger.LogInformation("bot_add_{botTeam} {difficulty} {botName}", botTeam, nameof(BotProfile.Difficulty.expert), BotProfile.Special[2]);
-                    }
-                });
-            }
+                if (_config.CurrentValue.IsDebug)
+                {
+                    _core.Logger.LogInformation("bot_add_{botTeam} {difficulty} {botName}", botTeam, nameof(BotProfile.Difficulty.expert), BotProfile.Special[0]);
+                    _core.Logger.LogInformation("bot_add_{botTeam} {difficulty} {botName}", botTeam, nameof(BotProfile.Difficulty.expert), BotProfile.Special[1]);
+                    _core.Logger.LogInformation("bot_add_{botTeam} {difficulty} {botName}", botTeam, nameof(BotProfile.Difficulty.expert), BotProfile.Special[2]);
+                }
+            });
         }
 
         private void KickBot()
