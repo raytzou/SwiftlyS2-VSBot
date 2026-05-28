@@ -74,7 +74,7 @@ namespace VSBot.Modules
             {
                 if (!AreSpecialBotsAdded())
                 {
-                    _logger.LogWarning("SetSpecialBotAttribute: Special bots are not added successfully");
+                    _logger.LogWarning("{methodName}: Special bots are not added successfully", nameof(SetSpecialBotAttribute));
                     return;
                 }
 
@@ -91,12 +91,18 @@ namespace VSBot.Modules
 
             void SetSpecialBotWeapon()
             {
-                if (_gameStateService.CurrentRound > 1)
+                if (_gameStateService.CurrentRound < 2)
+                    return;
+
+                if (!AreSpecialBotsAdded())
                 {
-                    SetBotWeapon(BotProfile.Special[0], ItemDefinitionIndex.Awp);
-                    SetBotWeapon(BotProfile.Special[1], ItemDefinitionIndex.M4a1Silencer);
-                    SetBotWeapon(BotProfile.Special[2], ItemDefinitionIndex.P90);
+                    _logger.LogWarning("{methodName}: Special bots are not added successfully", nameof(SetSpecialBotWeapon));
+                    return;
                 }
+
+                SetBotWeapon(BotProfile.Special[0], ItemDefinitionIndex.Awp);
+                SetBotWeapon(BotProfile.Special[1], ItemDefinitionIndex.M4a1Silencer);
+                SetBotWeapon(BotProfile.Special[2], ItemDefinitionIndex.P90);
             }
 
             void PreventAllBotsPickupWeapon()
