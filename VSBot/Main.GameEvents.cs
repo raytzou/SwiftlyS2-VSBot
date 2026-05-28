@@ -103,6 +103,11 @@ namespace VSBot
             playerService.StartTrackingAllPlayerWeapon();
             playerService.TrackPlayerWeapon();
 
+            if (gameState.CurrentRound > 0)
+            {
+                playerService.DisableAllPlayersGodMod();
+            }
+
             var botModule = GetRequiredService<BotModule>();
 
             botModule.OnRoundStart();
@@ -159,6 +164,25 @@ namespace VSBot
 
                 playerService.SetPlayerPosition(player.SteamID, position);
                 playerService.StopTrackingPlayerWeapon(player.SteamID);
+            }
+
+            return HookResult.Continue;
+        }
+
+        [GameEventHandler(HookMode.Post)]
+        public HookResult PlayerSpawnHandler(EventPlayerSpawn @event)
+        {
+            var player = @event.UserIdPlayer;
+            if (player is null || !player.IsValid)
+                return HookResult.Continue;
+
+            var gameState = GetRequiredService<IGameStateService>();
+
+            if (gameState.CurrentRound == 0)
+            {
+                var playerService = GetRequiredService<IPlayerService>();
+
+                playerService.EnableGodMod(player.Slot);
             }
 
             return HookResult.Continue;

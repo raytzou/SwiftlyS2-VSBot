@@ -104,6 +104,33 @@ namespace VSBot.Services
             _trackingWeaponTimer = null;
         }
 
+        public void EnableGodMod(int playerSlot)
+        {
+            var player = _core.PlayerManager
+                .GetAllPlayers()
+                .FirstOrDefault(f => f.Slot == playerSlot);
+
+            if (player is null || !player.IsValid || player.PlayerPawn is null)
+                return;
+
+            player.PlayerPawn.TakesDamage = false;
+        }
+
+        public void DisableAllPlayersGodMod()
+        {
+            var players = _core.PlayerManager
+                .GetAllValidPlayers()
+                .ToList();
+
+            foreach (var player in players)
+            {
+                if (player.PlayerPawn is null || !player.PlayerPawn.IsValid)
+                    continue;
+
+                player.PlayerPawn.TakesDamage = true;
+            }
+        }
+
         public PlayerPosition GetPlayerPosition(ulong steamID) => _positions[steamID];
 
         public PlayerWeaponStatus GetPlayerWeaponStatus(ulong steamID) => _weaponStatuses[steamID];
