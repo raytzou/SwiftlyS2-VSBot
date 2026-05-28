@@ -437,9 +437,9 @@ namespace VSBot.Modules
         {
             _logger.LogInformation("{methodName}: bot {botName}", nameof(PreventBotPickupWeapon), botName);
 
-            var buyTime = _core.ConVar.Find<float>("mp_buytime")!.Value;
+            var freezeTime = _core.ConVar.Find<int>("mp_freezetime")!.Value;
 
-            _core.Scheduler.DelayBySeconds(buyTime, () =>
+            _core.Scheduler.DelayBySeconds(freezeTime, () =>
             {
                 var bot = _core.PlayerManager
                     .GetBots()
