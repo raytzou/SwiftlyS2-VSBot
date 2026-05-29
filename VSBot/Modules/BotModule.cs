@@ -467,6 +467,20 @@ namespace VSBot.Modules
                 {
                     _logger.LogInformation("{methodName}: bot {botName} ArmorValue={armor}", nameof(SetBotArmor), botName, bot.PlayerPawn.ArmorValue);
                 }
+
+                if (bot.PlayerPawn.ItemServices is null)
+                {
+                    _logger.LogWarning("{methodName}: bot {botName} item service is null", nameof(SetBotArmor), botName);
+                    return;
+                }
+
+                bot.PlayerPawn.ItemServices.HasHelmet = true;
+                bot.PlayerPawn.ItemServices.HasHelmetUpdated();
+
+                if (_config.CurrentValue.IsDebug)
+                {
+                    _logger.LogInformation("{methodName}: bot {botName} HasHelmet={helmet}", nameof(SetBotArmor), botName, bot.PlayerPawn.ItemServices.HasHelmet);
+                }
             });
         }
 
