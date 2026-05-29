@@ -50,6 +50,7 @@ namespace VSBot.Modules
             SetDifficulty(0, 0);
             FillNormalBot();
             SetMaxRespawnTimes();
+            DisableRandomSpawn();
         }
 
         public void OnRoundStart()
@@ -59,6 +60,7 @@ namespace VSBot.Modules
             AllowAllBotsPickupWeapon();
             SetAllBotMoneyToZero();
             SetSpecialBotAttribute();
+            EnableRandomSpawn();
 
             if (_gameStateService.CurrentRound > 1)
             {
@@ -139,6 +141,7 @@ namespace VSBot.Modules
         public void OnRoundEnd()
         {
             SetMaxRespawnTimes();
+            DisableRandomSpawn();
 
             if (_gameStateService.CurrentRound > 0)
             {
@@ -567,6 +570,19 @@ namespace VSBot.Modules
         {
             _maxRespawnTimes = (_level < 3) ? 100 : (_level == 4) ? 120 : 150;
             _respawnTimes = _maxRespawnTimes;
+        }
+
+        private void EnableRandomSpawn()
+        {
+            _core.Scheduler.NextWorldUpdate(() =>
+            {
+                _core.Engine.ExecuteCommand("mp_randomspawn 1");
+            });
+        }
+
+        private void DisableRandomSpawn()
+        {
+            _core.Engine.ExecuteCommand("mp_randomspawn 0");
         }
 
         private bool AreSpecialBotsAdded() => _core.PlayerManager.GetBots().Count(bot => bot.Name == BotProfile.Special[0]) == 1 &&
