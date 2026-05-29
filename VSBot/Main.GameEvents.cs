@@ -153,19 +153,7 @@ namespace VSBot
 
             if (!player.IsFakeClient)
             {
-                var origin = new Vector(player.PlayerPawn.AbsOrigin?.X ?? 0f, player.PlayerPawn.AbsOrigin?.Y ?? 0f, player.PlayerPawn.AbsOrigin?.Z ?? 0f);
-                var rotation = new QAngle(player.PlayerPawn.AbsRotation?.X ?? 0f, player.PlayerPawn.AbsRotation?.Y ?? 0f, player.PlayerPawn.AbsRotation?.Z ?? 0f);
-                var velocity = new Vector(player.PlayerPawn.AbsVelocity.X, player.PlayerPawn.AbsVelocity.Y, player.PlayerPawn.AbsVelocity.Z);
-                var playerService = GetRequiredService<IPlayerService>();
-                var position = new PlayerPosition
-                {
-                    Origin = origin,
-                    Rotation = rotation,
-                    Velocity = velocity
-                };
-
-                playerService.SetPlayerPosition(player.SteamID, position);
-                playerService.StopTrackingPlayerWeapon(player.SteamID);
+                SavePlayerDeathPosition(player);
             }
 
             return HookResult.Continue;
@@ -188,6 +176,26 @@ namespace VSBot
             }
 
             return HookResult.Continue;
+        }
+
+        private void SavePlayerDeathPosition(IPlayer player)
+        {
+            if (player.PlayerPawn is null)
+                return;
+
+            var origin = new Vector(player.PlayerPawn.AbsOrigin?.X ?? 0f, player.PlayerPawn.AbsOrigin?.Y ?? 0f, player.PlayerPawn.AbsOrigin?.Z ?? 0f);
+            var rotation = new QAngle(player.PlayerPawn.AbsRotation?.X ?? 0f, player.PlayerPawn.AbsRotation?.Y ?? 0f, player.PlayerPawn.AbsRotation?.Z ?? 0f);
+            var velocity = new Vector(player.PlayerPawn.AbsVelocity.X, player.PlayerPawn.AbsVelocity.Y, player.PlayerPawn.AbsVelocity.Z);
+            var playerService = GetRequiredService<IPlayerService>();
+            var position = new PlayerPosition
+            {
+                Origin = origin,
+                Rotation = rotation,
+                Velocity = velocity
+            };
+
+            playerService.SetPlayerPosition(player.SteamID, position);
+            playerService.StopTrackingPlayerWeapon(player.SteamID);
         }
     }
 }
