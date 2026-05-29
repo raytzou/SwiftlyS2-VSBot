@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using VSBot.Services.Interfaces;
 
 namespace VSBot.Services
@@ -19,7 +20,22 @@ namespace VSBot.Services
         private readonly object _lock = new();
         private readonly List<AppliedPatchInfo> _appliedPatches = [];
 
-        private record PatchDefinition(PatchType Type, string Signature, string PatchHex, string ExpectedOriginalHex);
+        private record PatchDefinition(
+            PatchType Type,
+            string WindowsSignature,
+            string LinuxSignature,
+            string PatchHex,
+            string? ExpectedOriginalHex,
+            int WindowsOffset = 0,
+            int LinuxOffset = 0)
+        {
+            public string Signature => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? WindowsSignature : LinuxSignature;
+
+            public int Offset => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? WindowsOffset : LinuxOffset;
+        }
+
         private record AppliedPatchInfo(string Name, nint Address, byte[] OriginalBytes);
 
         private const string ServerLibrary = "server";
@@ -29,9 +45,21 @@ namespace VSBot.Services
             // cmovle r8d, ebx at VA 0x1802C5DFF incorrectly clamps the bot add counter to quota max on every increment
             ["Fix_BotAdd_Quota_Logic"] = new PatchDefinition(
                 Type: PatchType.AutoFix,
-                Signature: "44 3B C3 44 0F 4E C3 E8",
+                WindowsSignature: "44 3B C3 44 0F 4E C3 E8",
+                LinuxSignature: "44 3B C3 44 0F 4E C3 E8",
                 PatchHex: "44 3B C3 90 90 90 90 E8",
                 ExpectedOriginalHex: "44 3B C3 44 0F 4E C3 E8"
+            ),
+            // Patches EntSelectSpawnPoint to fix mp_randomspawn on all game modes.
+            // Source: https://github.com/qstage/CS2-FixRandomSpawn
+            ["Fix_RandomSpawn"] = new PatchDefinition(
+                Type: PatchType.AutoFix,
+                WindowsSignature: "48 83 EC ? 48 89 5C 24 ? 33 DB 48 89 74 24",
+                LinuxSignature: "55 48 89 E5 41 57 41 56 41 55 41 54 49 89 FC 53 48 83 EC ? 4C 8D 2D",
+                PatchHex: "90 90",
+                ExpectedOriginalHex: null,
+                WindowsOffset: 145,
+                LinuxOffset: 64
             )
         };
 
@@ -127,20 +155,24 @@ namespace VSBot.Services
 
             try
             {
-                var address = _core.Memory.GetAddressBySignature(ServerLibrary, definition.Signature);
-                if (address is null || address.Value == nint.Zero)
+                var baseAddress = _core.Memory.GetAddressBySignature(ServerLibrary, definition.Signature);
+                if (baseAddress is null || baseAddress.Value == nint.Zero)
                 {
                     _logger.LogError("PatchService: Signature scan failed for patch '{Name}'.", patchName);
                     return false;
                 }
 
+                nint patchAddress = baseAddress.Value + definition.Offset;
                 var patchBytes = ParseHexString(definition.PatchHex);
-                var expectedTokenCount = definition.ExpectedOriginalHex
-                    .Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
-                int readLength = Math.Max(patchBytes.Length, expectedTokenCount);
 
-                var currentBytes = _memory.ReadBytes(address.Value, readLength);
-                if (!ValidateBytes(currentBytes, definition.ExpectedOriginalHex))
+                int readLength = definition.ExpectedOriginalHex is not null
+                    ? Math.Max(patchBytes.Length,
+                        definition.ExpectedOriginalHex.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length)
+                    : patchBytes.Length;
+
+                var currentBytes = _memory.ReadBytes(patchAddress, readLength);
+
+                if (definition.ExpectedOriginalHex is not null && !ValidateBytes(currentBytes, definition.ExpectedOriginalHex))
                 {
                     _logger.LogCritical(
                         "PatchService: Validation failed for patch '{Name}'. Memory content does not match expected pattern. Aborting to prevent crash.",
@@ -151,14 +183,14 @@ namespace VSBot.Services
                 var originalBytes = new byte[patchBytes.Length];
                 Array.Copy(currentBytes, 0, originalBytes, 0, patchBytes.Length);
 
-                if (!_memory.SetMemoryProtection(address.Value, patchBytes.Length))
+                if (!_memory.SetMemoryProtection(patchAddress, patchBytes.Length))
                 {
                     _logger.LogError("PatchService: Failed to change memory protection for patch '{Name}'.", patchName);
                     return false;
                 }
 
-                _memory.WriteBytes(address.Value, patchBytes);
-                _appliedPatches.Add(new AppliedPatchInfo(patchName, address.Value, originalBytes));
+                _memory.WriteBytes(patchAddress, patchBytes);
+                _appliedPatches.Add(new AppliedPatchInfo(patchName, patchAddress, originalBytes));
                 _logger.LogInformation("PatchService: Applied patch '{Name}' (Type: {Type}).", patchName, definition.Type);
                 return true;
             }
