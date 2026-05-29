@@ -156,6 +156,10 @@ namespace VSBot
                 SavePlayerDeathPosition(player);
             }
 
+            var botModule = GetRequiredService<BotModule>();
+
+            botModule.RespawnBot(player);
+
             return HookResult.Continue;
         }
 

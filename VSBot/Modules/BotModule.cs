@@ -17,6 +17,8 @@ namespace VSBot.Modules
         private readonly IOptionsMonitor<Config> _config;
 
         private int _level = 2;
+        private int _maxRespawnTimes = 0;
+        private int _respawnTimes = 0;
 
         public BotModule(ISwiftlyCore core, ILogger<BotModule> logger, IGameStateService gameStateService, IOptionsMonitor<Config> config)
         {
@@ -47,6 +49,7 @@ namespace VSBot.Modules
 
             SetDifficulty(0, 0);
             FillNormalBot();
+            SetMaxRespawnTimes();
         }
 
         public void OnRoundStart()
@@ -135,10 +138,29 @@ namespace VSBot.Modules
 
         public void OnRoundEnd()
         {
+            SetMaxRespawnTimes();
+
             if (_gameStateService.CurrentRound > 0)
             {
                 SetDefaultWeapon();
             }
+        }
+
+        public void RespawnBot(IPlayer player)
+        {
+            if (_respawnTimes < 1 || !player.IsFakeClient)
+                return;
+
+            var specialBots = BotProfile.Special.Values.ToHashSet();
+
+            if (specialBots.Contains(player.Name))
+                return;
+
+            _respawnTimes--;
+            _core.Scheduler.NextWorldUpdate(() =>
+            {
+                player.Respawn();
+            });
         }
 
         private void DisableBotMovement()
@@ -539,6 +561,12 @@ namespace VSBot.Modules
                 _core.Engine.ExecuteCommand("mp_t_default_secondary \"\"");
                 _core.Engine.ExecuteCommand("mp_t_default_primary weapon_ak47");
             }
+        }
+
+        private void SetMaxRespawnTimes()
+        {
+            _maxRespawnTimes = (_level < 3) ? 100 : (_level == 4) ? 120 : 150;
+            _respawnTimes = _maxRespawnTimes;
         }
 
         private bool AreSpecialBotsAdded() => _core.PlayerManager.GetBots().Count(bot => bot.Name == BotProfile.Special[0]) == 1 &&
