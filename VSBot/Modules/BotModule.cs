@@ -344,14 +344,20 @@ namespace VSBot.Modules
                 bot.PlayerPawn.ItemServices.RemoveItems();
                 bot.PlayerPawn.ItemServicesUpdated();
 
+
+                if (bot.PlayerPawn.WeaponServices is null)
+                {
+                    _logger.LogWarning("{methodName}: bot {botName} weapon service is null", nameof(RemoveBotWeapon), botName);
+                    return;
+                }
+
+                foreach (var weapon in bot.PlayerPawn.WeaponServices.MyValidWeapons)
+                {
+                    bot.PlayerPawn.WeaponServices.RemoveWeapon(weapon);
+                }
+
                 if (_config.CurrentValue.IsDebug)
                 {
-                    if (bot.PlayerPawn.WeaponServices is null)
-                    {
-                        _logger.LogWarning("{methodName}: bot {botName} weapon service is null, skip checking weapon count", nameof(RemoveBotWeapon), botName);
-                        return;
-                    }
-
                     _logger.LogInformation("{methodName}: bot {botName} weapon count={count}", nameof(RemoveBotWeapon), botName, bot.PlayerPawn.WeaponServices.MyWeapons.Count);
                 }
             });
