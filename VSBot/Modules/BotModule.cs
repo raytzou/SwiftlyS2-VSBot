@@ -33,6 +33,7 @@ namespace VSBot.Modules
             _logger.LogInformation("{moduleName} {methodName}", nameof(BotModule), nameof(OnMapStart));
 
             DisableBotMovement();
+            DisableRandomSpawn();
             _gameStateService.MapReady += RemoveKnife;
             _gameStateService.MapReady += AddSpecialBot;
         }
