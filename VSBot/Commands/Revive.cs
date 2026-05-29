@@ -93,7 +93,7 @@ namespace VSBot.Commands
                 context.Reply($"X: {position.Origin.X} Y: {position.Origin.Y} Z: {position.Origin.Z}");
             else
             {
-                player.Controller.Score -= 50;
+                player.Controller.Score -= reviveCost;
                 player.Controller.ScoreUpdated();
             }
 
