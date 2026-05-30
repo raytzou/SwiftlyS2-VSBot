@@ -48,7 +48,7 @@ namespace VSBot.Modules
                 EnableBotMovement();
             }
 
-            SetDifficulty(0, 0);
+            SetDifficulty(_gameStateService.WinStreak, _gameStateService.LooseStreak);
             FillNormalBot();
             SetMaxRespawnTimes();
             DisableRandomSpawn();
@@ -143,6 +143,7 @@ namespace VSBot.Modules
         {
             SetMaxRespawnTimes();
             DisableRandomSpawn();
+            SetDifficulty(_gameStateService.WinStreak, _gameStateService.LooseStreak);
 
             if (_gameStateService.CurrentRound > 0)
             {

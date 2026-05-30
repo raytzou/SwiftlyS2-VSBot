@@ -11,6 +11,8 @@ namespace VSBot.Services.Interfaces
         public bool IsBuyTime { get; }
         public bool IsRoundEnd { get; }
         public Team HumanTeam { get; }
+        public int WinStreak { get; }
+        public int LooseStreak { get; }
 
         public event Action? MapReady;
 
@@ -24,5 +26,6 @@ namespace VSBot.Services.Interfaces
         public void OnRoundStart();
         public void OnRoundEnd();
         public void OnMapStart();
+        public void CalculateStreak(byte winTeam);
     }
 }

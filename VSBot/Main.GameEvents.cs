@@ -122,8 +122,10 @@ namespace VSBot
             var playerService = GetRequiredService<IPlayerService>();
             var reviveCommand = GetRequiredService<IRevive>();
             var botModule = GetRequiredService<BotModule>();
+            var winTeam = @event.Winner;
 
             gameState.OnRoundEnd();
+            gameState.CalculateStreak(winTeam);
             playerService.KillTrackingWeaponTimer();
             reviveCommand.OnRoundEnd();
             botModule.OnRoundEnd();

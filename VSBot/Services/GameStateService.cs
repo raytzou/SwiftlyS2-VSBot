@@ -37,6 +37,8 @@ namespace VSBot.Services
                 }
             }
         }
+        public int WinStreak => _winStreak;
+        public int LooseStreak => _looseStreak;
 
         public event Action? MapReady;
 
@@ -44,6 +46,8 @@ namespace VSBot.Services
         private bool _isWarmup = false;
         private bool _isBuyTime = false;
         private bool _isRoundEnd = false;
+        private int _winStreak = 0;
+        private int _looseStreak = 0;
 
         private readonly ISwiftlyCore _core;
         private readonly ILogger<GameStateService> _logger;
@@ -120,6 +124,22 @@ namespace VSBot.Services
         public void OnMapStart()
         {
             _core.Scheduler.NextWorldUpdate(() => MapReady?.Invoke());
+        }
+
+        public void CalculateStreak(byte winTeam)
+        {
+            if (winTeam == (int)HumanTeam)
+            {
+                _winStreak++;
+                _looseStreak = 0;
+            }
+            else
+            {
+                _looseStreak++;
+                _winStreak = 0;
+            }
+
+            _logger.LogInformation("WinStreak: {winStreak}, LooseStreak: {looseStreak}", _winStreak, _looseStreak);
         }
     }
 }
