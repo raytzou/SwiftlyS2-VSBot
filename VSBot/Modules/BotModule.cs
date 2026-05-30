@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.Helpers;
 using SwiftlyS2.Shared.Players;
+using System.Text.RegularExpressions;
 using VSBot.Classes;
 using VSBot.Models;
 using VSBot.Services.Interfaces;
@@ -19,6 +20,7 @@ namespace VSBot.Modules
         private int _level = 2;
         private int _maxRespawnTimes = 0;
         private int _respawnTimes = 0;
+        private readonly Regex NormalBotNameRegex = new(@"^\[(?<Grade>[^\]]+)\](?<Group>[^#]+)#(?<Num>\d{1,2})$");
 
         public BotModule(ISwiftlyCore core, ILogger<BotModule> logger, IGameStateService gameStateService, IOptionsMonitor<Config> config)
         {
@@ -148,6 +150,8 @@ namespace VSBot.Modules
             if (_gameStateService.CurrentRound > 0)
             {
                 SetDefaultWeapon();
+                KickNormalBot();
+                FillNormalBot();
             }
         }
 
@@ -605,6 +609,21 @@ namespace VSBot.Modules
         private void DisableRandomSpawn()
         {
             _core.Engine.ExecuteCommand("mp_randomspawn 0");
+        }
+
+        private void KickNormalBot()
+        {
+            foreach (var bot in _core.PlayerManager.GetBots())
+            {
+                var match = NormalBotNameRegex.Match(bot.Name);
+
+                if (match.Success)
+                {
+                    _core.Engine.ExecuteCommand($"kick {bot.Name}");
+                }
+            }
+
+            _core.Engine.ExecuteCommand("bot_quota 3");
         }
 
         private bool AreSpecialBotsAdded() => _core.PlayerManager.GetBots().Count(bot => bot.Name == BotProfile.Special[0]) == 1 &&
