@@ -157,6 +157,9 @@ namespace VSBot.Modules
 
         public void RespawnBot(IPlayer player)
         {
+            if (_gameStateService.IsRoundEnd)
+                return;
+
             if (_respawnTimes < 1 || !player.IsFakeClient)
                 return;
 
