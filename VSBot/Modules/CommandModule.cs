@@ -17,6 +17,7 @@ namespace VSBot.Modules
         private readonly IRcon _rcon;
         private readonly IBuy _buy;
         private readonly IRevive _revive;
+        private readonly ISlay _slay;
 
         public CommandModule(ISwiftlyCore core, ILogger<CommandModule> logger
             , IInfo info
@@ -27,6 +28,7 @@ namespace VSBot.Modules
             , IRcon rcon
             , IBuy buy
             , IRevive revive
+            , ISlay slay
             )
         {
             _core = core;
@@ -39,6 +41,7 @@ namespace VSBot.Modules
             _rcon = rcon;
             _buy = buy;
             _revive = revive;
+            _slay = slay;
         }
 
         public void Initialize()
@@ -95,6 +98,12 @@ namespace VSBot.Modules
         public void OnReviveCommand(ICommandContext context)
         {
             _revive.ExecuteCommand(context);
+        }
+
+        [Command(name: "slay", permission: "admin.slay", helpText: "Slays the player(s)")]
+        public void OnSlayCommand(ICommandContext context)
+        {
+            _slay.ExecuteCommand(context);
         }
 
         /// <summary>
