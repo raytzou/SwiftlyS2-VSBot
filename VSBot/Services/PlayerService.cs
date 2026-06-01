@@ -131,6 +131,29 @@ namespace VSBot.Services
             }
         }
 
+        public string? GetNameByKeyword(string keyword)
+        {
+            string normalizedKeyword = keyword.Trim().ToLowerInvariant();
+            string targetName = string.Empty;
+            int ctr = 0;
+            var allPlayers = _core.PlayerManager.GetAllPlayers()
+                .Select(s => s.Name)
+                .ToList();
+
+            foreach (var playerName in allPlayers)
+            {
+                if (playerName.Contains(normalizedKeyword, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    ctr++;
+                    targetName = playerName;
+                    if (ctr > 1)
+                        break;
+                }
+            }
+
+            return ctr == 1 ? targetName : null;
+        }
+
         public PlayerPosition GetPlayerPosition(ulong steamID) => _positions[steamID];
 
         public PlayerWeaponStatus GetPlayerWeaponStatus(ulong steamID) => _weaponStatuses[steamID];

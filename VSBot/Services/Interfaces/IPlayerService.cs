@@ -19,5 +19,6 @@ namespace VSBot.Services.Interfaces
         void DisableAllPlayersGodMod();
         PlayerPosition GetPlayerPosition(ulong steamID);
         PlayerWeaponStatus GetPlayerWeaponStatus(ulong steamID);
+        string? GetNameByKeyword(string keyword);
     }
 }
