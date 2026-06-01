@@ -136,7 +136,7 @@ namespace VSBot.Services
             string normalizedKeyword = keyword.Trim().ToLowerInvariant();
             string targetName = string.Empty;
             int ctr = 0;
-            var allPlayers = _core.PlayerManager.GetAllPlayers()
+            var allPlayers = _core.PlayerManager.GetAllValidPlayers()
                 .Select(s => s.Name)
                 .ToList();
 
