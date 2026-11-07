@@ -54,7 +54,7 @@ namespace VSBot.Services
             // Source: https://github.com/qstage/CS2-FixRandomSpawn
             ["Fix_RandomSpawn"] = new PatchDefinition(
                 Type: PatchType.AutoFix,
-                WindowsSignature: "48 83 EC ? 48 89 5C 24 ? 33 DB 48 89 74 24",
+                WindowsSignature: "48 83 EC ? 48 89 5C 24 ? 33 DB 48 89 ? 24 ? 48 8B ? 48 8B 0D",
                 LinuxSignature: "55 48 89 E5 41 57 41 56 41 55 41 54 49 89 FC 53 48 83 EC ? 4C 8D 2D",
                 PatchHex: "90 90",
                 ExpectedOriginalHex: null,
