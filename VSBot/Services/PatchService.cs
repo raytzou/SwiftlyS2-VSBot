@@ -42,13 +42,16 @@ namespace VSBot.Services
 
         private readonly Dictionary<string, PatchDefinition> _definitions = new()
         {
-            // cmovle r8d, ebx at VA 0x1802C5DFF incorrectly clamps the bot add counter to quota max on every increment
+            // NOPs the cmovle after "inc r8d; cmp r8d, <reg>" so bot_add only increments bot_quota by one
+            // instead of forcing it up to the current bot/player count (extra random bots).
             ["Fix_BotAdd_Quota_Logic"] = new PatchDefinition(
                 Type: PatchType.AutoFix,
-                WindowsSignature: "44 3B C3 44 0F 4E C3 E8",
+                WindowsSignature: "44 3B ? 44 0F 4E ? BA FF FF FF FF E8",
                 LinuxSignature: "44 3B C3 44 0F 4E C3 E8",
-                PatchHex: "44 3B C3 90 90 90 90 E8",
-                ExpectedOriginalHex: "44 3B C3 44 0F 4E C3 E8"
+                PatchHex: "90 90 90 90",
+                ExpectedOriginalHex: "44 0F 4E ?",
+                WindowsOffset: 3,
+                LinuxOffset: 3
             ),
             // Patches EntSelectSpawnPoint to fix mp_randomspawn on all game modes.
             // Source: https://github.com/qstage/CS2-FixRandomSpawn
