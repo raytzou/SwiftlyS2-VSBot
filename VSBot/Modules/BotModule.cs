@@ -556,7 +556,7 @@ namespace VSBot.Modules
 
                 if (_config.CurrentValue.IsDebug)
                 {
-                    _logger.LogInformation("AllowBo{methodName}tPickupWeapon: bot {botName} AllowBotPickupWeapon={AllowBotPickupWeapon}", nameof(AllowBotPickupWeapon), botName, bot.PlayerPawn.WeaponServices.PreventWeaponPickup);
+                    _logger.LogInformation("{methodName}: bot {botName} AllowBotPickupWeapon={AllowBotPickupWeapon}", nameof(AllowBotPickupWeapon), botName, bot.PlayerPawn.WeaponServices.PreventWeaponPickup);
                 }
             });
         }
