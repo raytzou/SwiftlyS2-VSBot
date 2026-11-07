@@ -25,17 +25,19 @@ namespace VSBot.Commands
             }
 
             var rcon = string.Join(" ", context.Args);
+
+            if (string.IsNullOrWhiteSpace(rcon))
+            {
+                context.Reply("[sw] Command cannot be empty.");
+                return;
+            }
+
             var player = context.Sender;
             var admin = player?.Name ?? "Console";
 
-            _core.Engine.ExecuteCommandWithBuffer(rcon, (output) =>
-            {
-                _core.Scheduler.NextWorldUpdate(() =>
-                {
-                    context.Reply(output);
-                    _logger.LogInformation("{admin} executed RCON command '{rcon}': {output}", admin, rcon, output);
-                });
-            });
+            _core.Engine.ExecuteCommand(rcon);
+            context.Reply($"RCON: {rcon} has been sumbitted.");
+            _logger.LogInformation("{admin} sumbitted RCON command '{rcon}'", admin, rcon);
         }
     }
 }
