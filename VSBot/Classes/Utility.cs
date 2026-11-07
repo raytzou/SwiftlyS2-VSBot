@@ -37,7 +37,7 @@ namespace VSBot.Classes
 
         private static void InitializeMaps()
         {
-            var dir = Main.SwiftlyCore.CSGODirectory.Trim("/csgo");
+            var dir = Main.SwiftlyCore.GameDirectory;
             var mapListPath = Path.Join(dir, "maplist.txt");
             if (!File.Exists(mapListPath)) throw new InvalidOperationException("Cannot find maplist.txt in root folder.");
 
