@@ -61,10 +61,19 @@ namespace VSBot
                 playerService.RemovePlayerPosition(player.SteamID);
                 playerService.RemovePlayerWeaponStatus(player.SteamID);
                 reviveCommand.OnPlayerDisconnect(player.SteamID);
+                SendDisconnectedMessage(gameState.Players.Values.ToList());
                 Core.Logger.LogInformation("{client} has disconnected at {DT}", player.Name, DateTime.Now);
             }
 
             return HookResult.Continue;
+
+            void SendDisconnectedMessage(List<IPlayer> players)
+            {
+                foreach (var thePlayer in players)
+                {
+                    thePlayer.SendChat($" {ChatColors.Lime}{player.Name} {Utility.GetTeamColorByPlayer(thePlayer)}has disconnected.");
+                }
+            }
         }
 
         [GameEventHandler(HookMode.Post)]
