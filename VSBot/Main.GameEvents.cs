@@ -114,13 +114,14 @@ namespace VSBot
             playerService.TrackPlayerWeapon();
             playerService.ApplyRoundStartHealth();
 
+            var config = GetRequiredService<IOptionsMonitor<Config>>();
+            var maxRound = config.CurrentValue.MaxRounds;
+
             if (gameState.CurrentRound > 0)
             {
                 playerService.DisableAllPlayersGodMod();
+                BroadcastRoundStartMessages();
             }
-
-            var config = GetRequiredService<IOptionsMonitor<Config>>();
-            var maxRound = config.CurrentValue.MaxRounds;
 
             if (gameState.CurrentRound == maxRound)
             {
@@ -139,6 +140,32 @@ namespace VSBot
                 {
                     Core.Engine.ExecuteCommand("mp_maxrounds 1");
                 });
+            }
+
+            void BroadcastRoundStartMessages()
+            {
+                foreach (var playerPair in gameState.Players)
+                {
+                    var player = playerPair.Value;
+
+                    if (player is null || !player.IsValid)
+                        continue;
+
+                    if (gameState.CurrentRound < maxRound)
+                    {
+                        var currentRound = gameState.CurrentRound;
+                        var currentLevel = gameState.CurrentBotLevel;
+                        var botMaxRespawnTimes = gameState.CurrentBotMaxRespawnTimes;
+
+                        player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Round: {ChatColors.Yellow}{currentRound}{ChatColors.Grey}/{maxRound}");
+                        player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Level: {ChatColors.Red}{currentLevel}{ChatColors.Grey}/{BotProfile.MaxLevel}");
+                        player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Max Respawn Times: {ChatColors.Purple}{botMaxRespawnTimes}");
+                    }
+                    else
+                    {
+                        player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Game over, otu!");
+                    }
+                }
             }
         }
 
