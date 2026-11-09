@@ -205,9 +205,9 @@ namespace VSBot.Modules
 
                 if (_config.CurrentValue.IsDebug)
                 {
-                    _core.Logger.LogInformation("bot_add_{botTeam} {difficulty} {botName}", botTeam, nameof(BotProfile.Difficulty.expert), BotProfile.Special[0]);
-                    _core.Logger.LogInformation("bot_add_{botTeam} {difficulty} {botName}", botTeam, nameof(BotProfile.Difficulty.expert), BotProfile.Special[1]);
-                    _core.Logger.LogInformation("bot_add_{botTeam} {difficulty} {botName}", botTeam, nameof(BotProfile.Difficulty.expert), BotProfile.Special[2]);
+                    _logger.LogInformation("bot_add_{botTeam} {difficulty} {botName}", botTeam, nameof(BotProfile.Difficulty.expert), BotProfile.Special[0]);
+                    _logger.LogInformation("bot_add_{botTeam} {difficulty} {botName}", botTeam, nameof(BotProfile.Difficulty.expert), BotProfile.Special[1]);
+                    _logger.LogInformation("bot_add_{botTeam} {difficulty} {botName}", botTeam, nameof(BotProfile.Difficulty.expert), BotProfile.Special[2]);
                 }
             });
         }
