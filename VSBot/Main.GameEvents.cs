@@ -174,12 +174,16 @@ namespace VSBot
                 return HookResult.Continue;
 
             var gameState = GetRequiredService<IGameStateService>();
+            var playerService = GetRequiredService<IPlayerService>();
 
             if (gameState.CurrentRound == 0)
             {
-                var playerService = GetRequiredService<IPlayerService>();
-
                 playerService.EnableGodMod(player.Slot);
+            }
+
+            if (!player.IsFakeClient)
+            {
+                playerService.ApplySpawnHealth(player);
             }
 
             return HookResult.Continue;

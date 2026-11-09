@@ -1,4 +1,5 @@
-﻿using VSBot.Models;
+﻿using SwiftlyS2.Shared.Players;
+using VSBot.Models;
 
 namespace VSBot.Services.Interfaces
 {
@@ -18,6 +19,7 @@ namespace VSBot.Services.Interfaces
         void EnableGodMod(int playerSlot);
         void DisableAllPlayersGodMod();
         void ApplyRoundStartHealth();
+        void ApplySpawnHealth(IPlayer player);
         PlayerPosition GetPlayerPosition(ulong steamID);
         PlayerWeaponStatus GetPlayerWeaponStatus(ulong steamID);
         string? GetNameByKeyword(string keyword);

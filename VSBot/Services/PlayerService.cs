@@ -1,4 +1,5 @@
 ﻿using SwiftlyS2.Shared;
+using SwiftlyS2.Shared.Players;
 using VSBot.Models;
 using VSBot.Services.Interfaces;
 
@@ -133,14 +134,6 @@ namespace VSBot.Services
 
         public void ApplyRoundStartHealth()
         {
-            int winStreak = _gameStateService.WinStreak;
-            int looseStreak = _gameStateService.LooseStreak;
-            int playerCount = _gameStateService.PlayerCount;
-            int baseHealth = BaseHealth(playerCount);
-            int health = RoundStartHealth(baseHealth, winStreak, looseStreak);
-
-            _core.PlayerManager.SendChat($"winstreak: {winStreak} loosestreak: {looseStreak} basehealth: {baseHealth}");
-
             foreach (var playerPair in _gameStateService.Players)
             {
                 var player = playerPair.Value;
@@ -148,11 +141,25 @@ namespace VSBot.Services
                 if (player is null || !player.IsValid || player.PlayerPawn is null || !player.PlayerPawn.IsValid)
                     continue;
 
-                player.PlayerPawn.Health = health;
-                player.PlayerPawn.MaxHealth = health;
-                player.PlayerPawn.HealthUpdated();
-                player.PlayerPawn.MaxHealthUpdated();
+                ApplySpawnHealth(player);
             }
+        }
+
+        public void ApplySpawnHealth(IPlayer player)
+        {
+            if (player is null || !player.IsValid || player.PlayerPawn is null || !player.PlayerPawn.IsValid)
+                return;
+
+            int winStreak = _gameStateService.WinStreak;
+            int looseStreak = _gameStateService.LooseStreak;
+            int playerCount = _gameStateService.PlayerCount;
+            int baseHealth = BaseHealth(playerCount);
+            int health = RoundStartHealth(baseHealth, winStreak, looseStreak);
+
+            player.PlayerPawn.Health = health;
+            player.PlayerPawn.MaxHealth = health;
+            player.PlayerPawn.HealthUpdated();
+            player.PlayerPawn.MaxHealthUpdated();
 
             int BaseHealth(int playerCount) =>
                 playerCount > 8 ? 150 : playerCount > 5 ? 250 : 350;
