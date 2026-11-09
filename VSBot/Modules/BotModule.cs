@@ -34,6 +34,7 @@ namespace VSBot.Modules
         {
             _logger.LogInformation("{moduleName} {methodName}", nameof(BotModule), nameof(OnMapStart));
 
+            Initialize();
             DisableBotMovement();
             DisableRandomSpawn();
             _gameStateService.MapReady += RemoveKnife;
@@ -627,6 +628,13 @@ namespace VSBot.Modules
             }
 
             _core.Engine.ExecuteCommand("bot_quota 3");
+        }
+
+        private void Initialize()
+        {
+            _level = 2;
+            _maxRespawnTimes = 0;
+            _respawnTimes = 0;
         }
 
         private bool AreSpecialBotsAdded() => _core.PlayerManager.GetBots().Count(bot => bot.Name == BotProfile.Special[0]) == 1 &&
