@@ -86,6 +86,8 @@ namespace VSBot.Services
             if (!_isWarmup) return;
 
             _isWarmup = false;
+            _winStreak = 0;
+            _looseStreak = 0;
             _logger.LogInformation("Warmup ended");
         }
 
