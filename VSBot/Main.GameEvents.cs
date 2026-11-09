@@ -120,6 +120,9 @@ namespace VSBot
         public HookResult RoundEndHandler(EventRoundEnd @event)
         {
             var gameState = GetRequiredService<IGameStateService>();
+
+            if (gameState.IsWarmup) return HookResult.Continue;
+
             var playerService = GetRequiredService<IPlayerService>();
             var reviveCommand = GetRequiredService<IRevive>();
             var botModule = GetRequiredService<BotModule>();

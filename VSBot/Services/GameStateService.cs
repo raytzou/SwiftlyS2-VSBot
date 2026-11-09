@@ -86,8 +86,6 @@ namespace VSBot.Services
             if (!_isWarmup) return;
 
             _isWarmup = false;
-            _winStreak = 0;
-            _looseStreak = 0;
             _logger.LogInformation("Warmup ended");
         }
 
@@ -126,6 +124,7 @@ namespace VSBot.Services
         public void OnMapStart()
         {
             _core.Scheduler.NextWorldUpdate(() => MapReady?.Invoke());
+            Initialize();
         }
 
         public void CalculateStreak(byte winTeam)
@@ -142,6 +141,15 @@ namespace VSBot.Services
             }
 
             _logger.LogInformation("WinStreak: {winStreak}, LooseStreak: {looseStreak}", _winStreak, _looseStreak);
+        }
+
+        private void Initialize()
+        {
+            _isWarmup = true;
+            _isBuyTime = false;
+            _isRoundEnd = false;
+            _winStreak = 0;
+            _looseStreak = 0;
         }
     }
 }
