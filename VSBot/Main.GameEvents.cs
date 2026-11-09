@@ -102,6 +102,7 @@ namespace VSBot
 
             playerService.StartTrackingAllPlayerWeapon();
             playerService.TrackPlayerWeapon();
+            playerService.ApplyRoundStartHealth();
 
             if (gameState.CurrentRound > 0)
             {

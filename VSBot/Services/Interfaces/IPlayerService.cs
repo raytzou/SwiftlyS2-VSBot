@@ -17,6 +17,7 @@ namespace VSBot.Services.Interfaces
         void KillTrackingWeaponTimer();
         void EnableGodMod(int playerSlot);
         void DisableAllPlayersGodMod();
+        void ApplyRoundStartHealth();
         PlayerPosition GetPlayerPosition(ulong steamID);
         PlayerWeaponStatus GetPlayerWeaponStatus(ulong steamID);
         string? GetNameByKeyword(string keyword);

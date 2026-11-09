@@ -131,6 +131,42 @@ namespace VSBot.Services
             }
         }
 
+        public void ApplyRoundStartHealth()
+        {
+            int winStreak = _gameStateService.WinStreak;
+            int looseStreak = _gameStateService.LooseStreak;
+            int playerCount = _gameStateService.PlayerCount;
+            int baseHealth = BaseHealth(playerCount);
+            int health = RoundStartHealth(baseHealth, winStreak, looseStreak);
+
+            _core.PlayerManager.SendChat($"winstreak: {winStreak} loosestreak: {looseStreak} basehealth: {baseHealth}");
+
+            foreach (var playerPair in _gameStateService.Players)
+            {
+                var player = playerPair.Value;
+
+                if (player is null || !player.IsValid || player.PlayerPawn is null || !player.PlayerPawn.IsValid)
+                    continue;
+
+                player.PlayerPawn.Health = health;
+                player.PlayerPawn.MaxHealth = health;
+                player.PlayerPawn.HealthUpdated();
+                player.PlayerPawn.MaxHealthUpdated();
+            }
+
+            int BaseHealth(int playerCount) =>
+                playerCount > 8 ? 150 : playerCount > 5 ? 250 : 350;
+
+            int RoundStartHealth(int baseHealth, int winStreak, int looseStreak)
+            {
+                const int MinHealth = 100;
+                const int MaxHealth = 400;
+                int health = baseHealth - winStreak * 10 + looseStreak * 10;
+
+                return Math.Clamp(health, MinHealth, MaxHealth);
+            }
+        }
+
         public string? GetNameByKeyword(string keyword)
         {
             string normalizedKeyword = keyword.Trim().ToLowerInvariant();
