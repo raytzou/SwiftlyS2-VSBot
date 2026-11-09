@@ -173,7 +173,15 @@ namespace VSBot.Modules
             _gameStateService.SetCurrentBotRespawnRemaining(_respawnTimes);
             _core.Scheduler.NextWorldUpdate(() =>
             {
+                AllowBotPickupWeapon(player.Name);
+            });
+            _core.Scheduler.NextWorldUpdate(() =>
+            {
                 player.Respawn();
+            });
+            _core.Scheduler.NextWorldUpdate(() =>
+            {
+                PreventBotPickupWeapon(player.Name);
             });
         }
 
