@@ -39,6 +39,9 @@ namespace VSBot.Services
         }
         public int WinStreak => _winStreak;
         public int LooseStreak => _looseStreak;
+        public int CurrentBotLevel => _currentLevel;
+        public int CurrentBotMaxRespawnTimes => _currentBotMaxRespawnTimes;
+        public int CurrentBotRespawnRemaining => _currentBotRespawnRemaining;
 
         public event Action? MapReady;
 
@@ -48,6 +51,9 @@ namespace VSBot.Services
         private bool _isRoundEnd = false;
         private int _winStreak = 0;
         private int _looseStreak = 0;
+        private int _currentLevel = 0;
+        private int _currentBotMaxRespawnTimes = 0;
+        private int _currentBotRespawnRemaining = 0;
 
         private readonly ISwiftlyCore _core;
         private readonly ILogger<GameStateService> _logger;
@@ -141,6 +147,21 @@ namespace VSBot.Services
             }
 
             _logger.LogInformation("WinStreak: {winStreak}, LooseStreak: {looseStreak}", _winStreak, _looseStreak);
+        }
+
+        public void SetCurrentBotLevel(int level)
+        {
+            _currentLevel = level;
+        }
+
+        public void SetCurrentBotMaxRespawnTimes(int maxRespawnTimes)
+        {
+            _currentBotMaxRespawnTimes = maxRespawnTimes;
+        }
+
+        public void SetCurrentBotRespawnRemaining(int respawnRemaining)
+        {
+            _currentBotRespawnRemaining = respawnRemaining;
         }
 
         private void Initialize()

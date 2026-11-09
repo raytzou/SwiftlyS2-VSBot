@@ -170,6 +170,7 @@ namespace VSBot.Modules
                 return;
 
             _respawnTimes--;
+            _gameStateService.SetCurrentBotRespawnRemaining(_respawnTimes);
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 player.Respawn();
@@ -247,6 +248,7 @@ namespace VSBot.Modules
             else if (looseStreak >= 2 && _level > 1)
                 _level--;
 
+            _gameStateService.SetCurrentBotLevel(_level + 1);
             _logger.LogInformation("{methodName}: level: {level}", nameof(SetDifficulty), _level);
         }
 
@@ -600,6 +602,8 @@ namespace VSBot.Modules
         {
             _maxRespawnTimes = (_level < 3) ? 100 : (_level == 4) ? 120 : 150;
             _respawnTimes = _maxRespawnTimes;
+            _gameStateService.SetCurrentBotMaxRespawnTimes(_maxRespawnTimes);
+            _gameStateService.SetCurrentBotRespawnRemaining(_respawnTimes);
         }
 
         private void EnableRandomSpawn()

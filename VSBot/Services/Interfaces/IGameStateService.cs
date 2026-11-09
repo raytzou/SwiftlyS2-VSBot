@@ -13,6 +13,9 @@ namespace VSBot.Services.Interfaces
         public Team HumanTeam { get; }
         public int WinStreak { get; }
         public int LooseStreak { get; }
+        public int CurrentBotLevel { get; }
+        public int CurrentBotMaxRespawnTimes { get; }
+        public int CurrentBotRespawnRemaining { get; }
 
         public event Action? MapReady;
 
@@ -27,5 +30,8 @@ namespace VSBot.Services.Interfaces
         public void OnRoundEnd();
         public void OnMapStart();
         public void CalculateStreak(byte winTeam);
+        public void SetCurrentBotLevel(int level);
+        public void SetCurrentBotMaxRespawnTimes(int maxRespawnTimes);
+        public void SetCurrentBotRespawnRemaining(int respawnRemaining);
     }
 }
