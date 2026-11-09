@@ -26,6 +26,7 @@ namespace VSBot
             }
 
             ResetDefaultWeapon();
+            ResetMaxRounds();
             gameState.MapReady += AddMoreSpawnPoints;
             gameState.ClearPlayers();
             playerService.ClearPlayerPositions();
@@ -99,6 +100,14 @@ namespace VSBot
             Core.Engine.ExecuteCommand("mp_t_default_primary \"\"");
             Core.Engine.ExecuteCommand("mp_ct_default_secondary weapon_hkp2000");
             Core.Engine.ExecuteCommand("mp_t_default_secondary weapon_glock");
+        }
+
+        private void ResetMaxRounds()
+        {
+            var config = GetRequiredService<IOptionsMonitor<Config>>();
+            var maxRounds = config.CurrentValue.MaxRounds;
+
+            Core.Engine.ExecuteCommand($"mp_maxrounds {maxRounds}");
         }
     }
 }

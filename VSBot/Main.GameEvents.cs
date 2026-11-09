@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SwiftlyS2.Shared.GameEventDefinitions;
 using SwiftlyS2.Shared.GameEvents;
 using SwiftlyS2.Shared.Misc;
@@ -109,11 +110,27 @@ namespace VSBot
                 playerService.DisableAllPlayersGodMod();
             }
 
+            var config = GetRequiredService<IOptionsMonitor<Config>>();
+            var maxRound = config.CurrentValue.MaxRounds;
+
+            if (gameState.CurrentRound == maxRound)
+            {
+                TriggerMatchEnd();
+            }
+
             var botModule = GetRequiredService<BotModule>();
 
             botModule.OnRoundStart();
 
             return HookResult.Continue;
+
+            void TriggerMatchEnd()
+            {
+                Core.Scheduler.DelayBySeconds(1f, () =>
+                {
+                    Core.Engine.ExecuteCommand("mp_maxrounds 1");
+                });
+            }
         }
 
         [GameEventHandler(HookMode.Post)]
