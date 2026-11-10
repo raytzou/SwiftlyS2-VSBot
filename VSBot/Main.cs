@@ -11,10 +11,11 @@ using VSBot.Models;
 using VSBot.Modules;
 using VSBot.Services;
 using VSBot.Services.Interfaces;
+using VSBot.UI.Interfaces;
 
 namespace VSBot
 {
-    [PluginMetadata(Author = "cynicat", Name = "VSBot Plugin", Id = "vsbot", Version = "26.11.18")]
+    [PluginMetadata(Author = "cynicat", Name = "VSBot Plugin", Id = "vsbot", Version = "26.11.19")]
     public partial class Main : BasePlugin
     {
         public static ISwiftlyCore SwiftlyCore => _serviceProvider?.GetRequiredService<ISwiftlyCore>()
@@ -30,6 +31,7 @@ namespace VSBot
 
             RegisterServices(services);
             RegisterCommands(services);
+            RegisterUIComponents(services);
             _serviceProvider = services.BuildServiceProvider();
             InitializeCommandModule();
             Utility.Initialize();
@@ -54,6 +56,7 @@ namespace VSBot
         {
             services.AddSwiftly(Core).AddOptionsWithValidateOnStart<Config>().BindConfiguration("Main");
             services.AddTransient<CommandModule>();
+            services.AddTransient<UIModule>();
             services.AddSingleton<BotModule>();
             services.AddSingleton<INativeMemoryService, NativeMemoryService>();
             services.AddSingleton<IPatchService, PatchService>();
@@ -85,6 +88,28 @@ namespace VSBot
                 {
                     services.AddTransient(@interface, commandType);
                     Core.Logger.LogInformation($"Registered command: {@interface.Name} -> {commandType.Name}");
+                }
+            }
+        }
+
+        private void RegisterUIComponents(IServiceCollection services)
+        {
+            var commandTypes = Assembly.GetExecutingAssembly().GetTypes()
+                .Where(t => t.Namespace == "VSBot.UI"
+                         && !t.IsInterface
+                         && !t.IsAbstract
+                         && typeof(IUIComponent).IsAssignableFrom(t));
+
+            foreach (var commandType in commandTypes)
+            {
+                var interfaces = commandType.GetInterfaces()
+                    .Where(i => i.Namespace == "VSBot.UI.Interfaces"
+                             && i != typeof(IUIComponent));
+
+                foreach (var @interface in interfaces)
+                {
+                    services.AddSingleton(@interface, commandType);
+                    Core.Logger.LogInformation($"Registered UI: {@interface.Name} -> {commandType.Name}");
                 }
             }
         }

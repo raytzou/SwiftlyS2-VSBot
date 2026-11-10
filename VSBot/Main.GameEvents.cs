@@ -10,6 +10,7 @@ using VSBot.Commands.Interfaces;
 using VSBot.Models;
 using VSBot.Modules;
 using VSBot.Services.Interfaces;
+using VSBot.UI.Interfaces;
 using static SwiftlyS2.Shared.Helper;
 
 namespace VSBot
@@ -26,11 +27,13 @@ namespace VSBot
             {
                 var gameState = GetRequiredService<IGameStateService>();
                 var playerService = GetRequiredService<IPlayerService>();
+                var motd = GetRequiredService<IMotd>();
 
                 gameState.AddPlayer(player);
                 playerService.AddPlayerPosition(player.SteamID);
                 playerService.AddPlayerWeaponStatus(player.SteamID);
                 SendConnectedMessage(gameState.Players.Values.ToList());
+                motd.Open(player.PlayerID);
                 Core.Logger.LogInformation("{client} has connected at {DT}, IP: {ipAddress}, SteamID: {steamID}", player.Name, DateTime.Now, player.IPAddress, player.SteamID);
             }
 

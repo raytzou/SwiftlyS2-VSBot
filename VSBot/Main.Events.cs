@@ -27,6 +27,7 @@ namespace VSBot
 
             ResetDefaultWeapon();
             ResetMaxRounds();
+            gameState.MapReady += InitializeUIModule;
             gameState.MapReady += AddMoreSpawnPoints;
             gameState.MapReady += SetHumanTeam;
             gameState.ClearPlayers();
@@ -123,6 +124,13 @@ namespace VSBot
             {
                 Core.Engine.ExecuteCommand("mp_humanteam t");
             }
+        }
+
+        private void InitializeUIModule()
+        {
+            var UIModule = GetRequiredService<UIModule>();
+
+            UIModule.Initialize();
         }
     }
 }
