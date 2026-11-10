@@ -156,8 +156,9 @@ namespace VSBot
                         var currentRound = gameState.CurrentRound;
                         var currentLevel = gameState.CurrentBotLevel;
                         var botMaxRespawnTimes = gameState.CurrentBotMaxRespawnTimes;
+                        var availableRounds = maxRound - 1;
 
-                        player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Round: {ChatColors.Yellow}{currentRound}{ChatColors.Grey}/{maxRound}");
+                        player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Round: {ChatColors.Yellow}{currentRound}{ChatColors.Grey}/{availableRounds}");
                         player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Level: {ChatColors.Red}{currentLevel}{ChatColors.Grey}/{BotProfile.MaxLevel}");
                         player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Max Respawn Times: {ChatColors.Purple}{botMaxRespawnTimes}");
                     }
