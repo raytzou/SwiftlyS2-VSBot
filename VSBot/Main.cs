@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.GameEventDefinitions;
 using SwiftlyS2.Shared.Plugins;
-using System.Reflection;
 using VSBot.Classes;
 using VSBot.Commands.Interfaces;
 using VSBot.Models;
@@ -30,8 +29,7 @@ namespace VSBot
             ServiceCollection services = new();
 
             RegisterServices(services);
-            RegisterCommands(services);
-            RegisterUIComponents(services);
+            RegisterByConvention(services);
             _serviceProvider = services.BuildServiceProvider();
             InitializeCommandModule();
             Utility.Initialize();
@@ -70,47 +68,27 @@ namespace VSBot
             command.Initialize();
         }
 
-        private void RegisterCommands(IServiceCollection services)
+        private void RegisterByConvention(IServiceCollection services)
         {
-            var commandTypes = Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t => t.Namespace == "VSBot.Commands"
-                         && !t.IsInterface
-                         && !t.IsAbstract
-                         && typeof(ICommand).IsAssignableFrom(t));
+            var originalCount = services.Count;
 
-            foreach (var commandType in commandTypes)
+            services.Scan(scan => scan
+                .FromAssemblyOf<Main>()
+                .AddClasses(c => c.Where(t => t.Namespace == "VSBot.Commands" && typeof(ICommand).IsAssignableFrom(t)), publicOnly: false)
+                    .AsImplementedInterfaces(i => i.Namespace == "VSBot.Commands.Interfaces" && i != typeof(ICommand))
+                    .WithTransientLifetime()
+                .AddClasses(c => c.Where(t => t.Namespace == "VSBot.UI" && typeof(IUIComponent).IsAssignableFrom(t)), publicOnly: false)
+                    .AsImplementedInterfaces(i => i.Namespace == "VSBot.UI.Interfaces" && i != typeof(IUIComponent))
+                    .WithSingletonLifetime());
+
+            foreach (var descriptor in services.Skip(originalCount))
             {
-                var interfaces = commandType.GetInterfaces()
-                    .Where(i => i.Namespace == "VSBot.Commands.Interfaces"
-                             && i != typeof(ICommand));
-
-                foreach (var @interface in interfaces)
-                {
-                    services.AddTransient(@interface, commandType);
-                    Core.Logger.LogInformation($"Registered command: {@interface.Name} -> {commandType.Name}");
-                }
-            }
-        }
-
-        private void RegisterUIComponents(IServiceCollection services)
-        {
-            var commandTypes = Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t => t.Namespace == "VSBot.UI"
-                         && !t.IsInterface
-                         && !t.IsAbstract
-                         && typeof(IUIComponent).IsAssignableFrom(t));
-
-            foreach (var commandType in commandTypes)
-            {
-                var interfaces = commandType.GetInterfaces()
-                    .Where(i => i.Namespace == "VSBot.UI.Interfaces"
-                             && i != typeof(IUIComponent));
-
-                foreach (var @interface in interfaces)
-                {
-                    services.AddSingleton(@interface, commandType);
-                    Core.Logger.LogInformation($"Registered UI: {@interface.Name} -> {commandType.Name}");
-                }
+                Core.Logger.LogInformation(
+                    "Registered: {Service} -> {Implementation} ({Lifetime})",
+                    descriptor.ServiceType.Name,
+                    descriptor.ImplementationType?.Name ?? "Factory",
+                    descriptor.Lifetime
+                );
             }
         }
 
