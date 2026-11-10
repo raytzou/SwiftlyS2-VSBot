@@ -28,6 +28,7 @@ namespace VSBot
             ResetDefaultWeapon();
             ResetMaxRounds();
             gameState.MapReady += AddMoreSpawnPoints;
+            gameState.MapReady += SetHumanTeam;
             gameState.ClearPlayers();
             playerService.ClearPlayerPositions();
             playerService.ClearPlayerWeaponStatuses();
@@ -108,6 +109,20 @@ namespace VSBot
             var maxRounds = config.CurrentValue.MaxRounds;
 
             Core.Engine.ExecuteCommand($"mp_maxrounds {maxRounds}");
+        }
+
+        private void SetHumanTeam()
+        {
+            var gameState = GetRequiredService<IGameStateService>();
+
+            if (gameState.HumanTeam == SwiftlyS2.Shared.Players.Team.CT)
+            {
+                Core.Engine.ExecuteCommand("mp_humanteam ct");
+            }
+            else
+            {
+                Core.Engine.ExecuteCommand("mp_humanteam t");
+            }
         }
     }
 }
