@@ -485,8 +485,11 @@ namespace VSBot.Modules
                     return;
                 }
 
-                bot.PlayerPawn.ArmorValue = amount;
-                bot.PlayerPawn.ArmorValueUpdated();
+                _core.Scheduler.NextWorldUpdate(() =>
+                {
+                    bot.PlayerPawn.ArmorValue = amount;
+                    bot.PlayerPawn.ArmorValueUpdated();
+                });
 
                 if (_config.CurrentValue.IsDebug)
                 {
@@ -499,8 +502,11 @@ namespace VSBot.Modules
                     return;
                 }
 
-                bot.PlayerPawn.ItemServices.HasHelmet = true;
-                bot.PlayerPawn.ItemServices.HasHelmetUpdated();
+                _core.Scheduler.NextWorldUpdate(() =>
+                {
+                    bot.PlayerPawn.ItemServices.HasHelmet = true;
+                    bot.PlayerPawn.ItemServices.HasHelmetUpdated();
+                });
 
                 if (_config.CurrentValue.IsDebug)
                 {

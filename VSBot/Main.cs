@@ -14,7 +14,7 @@ using VSBot.Services.Interfaces;
 
 namespace VSBot
 {
-    [PluginMetadata(Author = "cynicat", Name = "VSBot Plugin", Id = "vsbot", Version = "26.11.17")]
+    [PluginMetadata(Author = "cynicat", Name = "VSBot Plugin", Id = "vsbot", Version = "26.11.18")]
     public partial class Main : BasePlugin
     {
         public static ISwiftlyCore SwiftlyCore => _serviceProvider?.GetRequiredService<ISwiftlyCore>()
