@@ -46,10 +46,10 @@ namespace VSBot.UI
             _motd.StrLayout = "panorama/layout/custom_game/cs16_style_motd.xml";
             _motd.StrLayoutUpdated();
             _motd.DispatchSpawn();
-            _core.Event.OnCustomHudClicked += OnCustomHudClicked;
+            _core.Event.OnCustomHudClicked += OnClicked;
         }
 
-        public void OnCustomHudClicked(IOnCustomHudClickedEvent @event)
+        public void OnClicked(IOnCustomHudClickedEvent @event)
         {
             if (_motd == null)
             {
