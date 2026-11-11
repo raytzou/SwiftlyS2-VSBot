@@ -18,6 +18,7 @@ namespace VSBot.Modules
         private readonly IBuy _buy;
         private readonly IRevive _revive;
         private readonly ISlay _slay;
+        private readonly IMotd _motd;
 
         public CommandModule(ISwiftlyCore core, ILogger<CommandModule> logger
             , IInfo info
@@ -29,6 +30,7 @@ namespace VSBot.Modules
             , IBuy buy
             , IRevive revive
             , ISlay slay
+            , IMotd motd
             )
         {
             _core = core;
@@ -42,6 +44,7 @@ namespace VSBot.Modules
             _buy = buy;
             _revive = revive;
             _slay = slay;
+            _motd = motd;
         }
 
         public void Initialize()
@@ -104,6 +107,12 @@ namespace VSBot.Modules
         public void OnSlayCommand(ICommandContext context)
         {
             _slay.ExecuteCommand(context);
+        }
+
+        [Command(name: "motd", helpText: "Opens MOTD")]
+        public void OnMotdCommand(ICommandContext context)
+        {
+            _motd.ExecuteCommand(context);
         }
 
         /// <summary>

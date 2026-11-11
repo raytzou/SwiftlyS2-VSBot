@@ -10,7 +10,6 @@ using VSBot.Commands.Interfaces;
 using VSBot.Models;
 using VSBot.Modules;
 using VSBot.Services.Interfaces;
-using VSBot.UI.Interfaces;
 using static SwiftlyS2.Shared.Helper;
 
 namespace VSBot
@@ -27,7 +26,7 @@ namespace VSBot
             {
                 var gameState = GetRequiredService<IGameStateService>();
                 var playerService = GetRequiredService<IPlayerService>();
-                var motd = GetRequiredService<IMotd>();
+                var motd = GetRequiredService<UI.Interfaces.IMotd>();
 
                 gameState.AddPlayer(player);
                 playerService.AddPlayerPosition(player.SteamID);
