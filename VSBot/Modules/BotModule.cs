@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using VSBot.Classes;
 using VSBot.Models;
 using VSBot.Services.Interfaces;
+using VSBot.UI.Interfaces;
 
 namespace VSBot.Modules
 {
@@ -16,18 +17,20 @@ namespace VSBot.Modules
         private readonly ILogger<BotModule> _logger;
         private readonly IGameStateService _gameStateService;
         private readonly IOptionsMonitor<Config> _config;
+        private readonly IScoreboard _scoreboard;
 
         private int _level = 2;
         private int _maxRespawnTimes = 0;
         private int _respawnTimes = 0;
         private readonly Regex NormalBotNameRegex = new(@"^\[(?<Grade>[^\]]+)\](?<Group>[^#]+)#(?<Num>\d{1,2})$");
 
-        public BotModule(ISwiftlyCore core, ILogger<BotModule> logger, IGameStateService gameStateService, IOptionsMonitor<Config> config)
+        public BotModule(ISwiftlyCore core, ILogger<BotModule> logger, IGameStateService gameStateService, IOptionsMonitor<Config> config, IScoreboard scoreboard)
         {
             _core = core;
             _logger = logger;
             _gameStateService = gameStateService;
             _config = config;
+            _scoreboard = scoreboard;
         }
 
         public void OnMapStart()
@@ -171,6 +174,7 @@ namespace VSBot.Modules
 
             _respawnTimes--;
             _gameStateService.SetCurrentBotRespawnRemaining(_respawnTimes);
+            _scoreboard.Update(_respawnTimes);
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 AllowBotPickupWeapon(player.Name);
@@ -618,6 +622,7 @@ namespace VSBot.Modules
             _respawnTimes = _maxRespawnTimes;
             _gameStateService.SetCurrentBotMaxRespawnTimes(_maxRespawnTimes);
             _gameStateService.SetCurrentBotRespawnRemaining(_respawnTimes);
+            _scoreboard.Update(_respawnTimes);
         }
 
         private void EnableRandomSpawn()
