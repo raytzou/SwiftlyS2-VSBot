@@ -93,7 +93,7 @@ namespace VSBot.Modules
             _buy.ExecuteCommand(context);
         }
 
-        [Command(name: "revive")]
+        [Command(name: "revive", helpText: "Costs score to revive")]
         [CommandAlias("res")]
         public void OnReviveCommand(ICommandContext context)
         {
