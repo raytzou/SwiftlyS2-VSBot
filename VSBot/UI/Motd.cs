@@ -17,7 +17,7 @@ namespace VSBot.UI
             _logger = logger;
         }
 
-        private CCSCustomHudLayout _motd;
+        private CCSCustomHudLayout? _motd;
 
         public void Close(int playerId)
         {
