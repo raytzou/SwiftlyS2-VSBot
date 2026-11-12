@@ -38,6 +38,19 @@ namespace VSBot
             Core.Logger.LogInformation("Map start: {mapName}", mapName);
         }
 
+        private void OnPrecacheResource(IOnPrecacheResourceEvent @event)
+        {
+            var config = GetRequiredService<IOptionsMonitor<Config>>();
+            var saysoundSoundEventFile = config.CurrentValue.SaysoundSoundEventFile;
+
+            if (string.IsNullOrEmpty(saysoundSoundEventFile))
+            {
+                throw new InvalidOperationException("Saysound Sound Event File is not set.");
+            }
+
+            @event.AddItem(saysoundSoundEventFile);
+        }
+
         private void EnableCheats()
         {
             var gameState = GetRequiredService<IGameStateService>();

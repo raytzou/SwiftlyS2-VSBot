@@ -22,6 +22,8 @@ namespace VSBot
 
         private static ServiceProvider? _serviceProvider;
 
+        private HashSet<Guid> _listeners = new();
+
         public Main(ISwiftlyCore core) : base(core) { }
 
         public override void Load(bool hotReload)
@@ -34,12 +36,14 @@ namespace VSBot
             InitializeCommandModule();
             Utility.Initialize();
             RegisterEvents();
+            RegisterListeners();
             GetRequiredService<IPatchService>().ApplyAllAutoPatches();
             Core.Configuration.InitializeJsonWithModel<Config>("config.jsonc", "Main")
                 .Configure(builder =>
                 {
                     builder.AddJsonFile("config.jsonc", optional: false, reloadOnChange: true);
                 });
+            GetRequiredService<ISaysoundService>().Initialize();
             Core.Logger.LogInformation("Plugin Loaded.");
         }
 
@@ -47,6 +51,7 @@ namespace VSBot
         {
             UnregisterEvents();
             UnhookGameEvents();
+            UnregisterListeners();
             _serviceProvider?.Dispose();
         }
 
@@ -60,6 +65,7 @@ namespace VSBot
             services.AddSingleton<IPatchService, PatchService>();
             services.AddSingleton<IGameStateService, GameStateService>();
             services.AddSingleton<IPlayerService, PlayerService>();
+            services.AddSingleton<ISaysoundService, SaysoundService>();
         }
 
         private void InitializeCommandModule()
@@ -95,11 +101,18 @@ namespace VSBot
         private void RegisterEvents()
         {
             Core.Event.OnMapLoad += OnMapLoad;
+            Core.Event.OnPrecacheResource += OnPrecacheResource;
+        }
+
+        private void RegisterListeners()
+        {
+            _listeners.Add(Core.Command.HookClientChat(SaysoundListener));
         }
 
         private void UnregisterEvents()
         {
             Core.Event.OnMapLoad -= OnMapLoad;
+            Core.Event.OnPrecacheResource -= OnPrecacheResource;
         }
 
         private void UnhookGameEvents()
@@ -112,6 +125,14 @@ namespace VSBot
             Core.GameEvent.UnhookPost<EventRoundEnd>();
             Core.GameEvent.UnhookPost<EventBuytimeEnded>();
             Core.GameEvent.UnhookPost<EventPlayerDeath>();
+        }
+
+        private void UnregisterListeners()
+        {
+            foreach (var listener in _listeners)
+            {
+                Core.Command.UnregisterCommand(listener);
+            }
         }
 
         private T GetRequiredService<T>() where T : notnull
