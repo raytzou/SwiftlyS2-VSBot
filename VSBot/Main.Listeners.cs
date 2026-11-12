@@ -45,9 +45,13 @@ namespace VSBot
         private void ProcessSaysound(int playerId, string saysoundKeyword, string pitchText)
         {
             var saysoundService = GetRequiredService<ISaysoundService>();
+            var saysound = saysoundService.Saysound[saysoundKeyword];
+            var pitch = pitchText == "r" ?
+                Random.Shared.Next(75, 150) / 100f : string.IsNullOrEmpty(pitchText) ?
+                1f : _pitchMapper[pitchText];
 
             BroadcastSaysound(playerId, saysoundKeyword, pitchText);
-            saysoundService.PlaySaysound();
+            saysoundService.PlaySaysound(saysound.SoundEvent, pitch);
         }
 
         private void BroadcastSaysound(int playerId, string saysoundKeyword, string pitchText)

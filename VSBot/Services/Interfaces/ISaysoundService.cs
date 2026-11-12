@@ -5,6 +5,6 @@
         public Dictionary<string, (string SoundEvent, string Content, string TWContent, string JPContent)> Saysound { get; }
 
         public void Initialize();
-        public void PlaySaysound();
+        public void PlaySaysound(string soundEventName, float pitch);
     }
 }

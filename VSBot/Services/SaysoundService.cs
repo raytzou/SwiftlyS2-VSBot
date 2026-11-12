@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SwiftlyS2.Shared;
+using SwiftlyS2.Shared.Sounds;
 using VSBot.Models;
 using VSBot.Services.Interfaces;
 
@@ -64,9 +65,18 @@ namespace VSBot.Services
             _logger.LogInformation("Saysound Initialized, count: {count}", _saysound.Count);
         }
 
-        public void PlaySaysound()
+        public void PlaySaysound(string soundEventName, float pitch)
         {
-            throw new NotImplementedException();
+            const float volume = 0.5f;
+            var sound = new SoundEvent()
+            {
+                Name = soundEventName,
+                Volume = volume,
+                Pitch = pitch,
+            };
+
+            sound.Recipients.AddAllPlayers();
+            sound.Emit();
         }
     }
 }
