@@ -116,6 +116,8 @@ namespace VSBot
         {
             var gameState = GetRequiredService<IGameStateService>();
 
+            gameState.MapReady -= SetHumanTeam;
+
             if (gameState.HumanTeam == SwiftlyS2.Shared.Players.Team.CT)
             {
                 Core.Engine.ExecuteCommand("mp_humanteam ct");
@@ -128,6 +130,10 @@ namespace VSBot
 
         private void InitializeUIModule()
         {
+            var gameState = GetRequiredService<IGameStateService>();
+
+            gameState.MapReady -= InitializeUIModule;
+
             var UIModule = GetRequiredService<UIModule>();
 
             UIModule.Initialize();
