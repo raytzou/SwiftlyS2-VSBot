@@ -18,6 +18,7 @@ namespace VSBot
             var playerService = GetRequiredService<IPlayerService>();
             var config = GetRequiredService<IOptionsMonitor<Config>>();
             var botModule = GetRequiredService<BotModule>();
+            var playerDataService = GetRequiredService<IPlayerDataService>();
 
             if (config.CurrentValue.IsDebug)
             {
@@ -35,7 +36,16 @@ namespace VSBot
             playerService.ClearPlayerWeaponStatuses();
             gameState.OnMapStart();
             botModule.OnMapStart();
+            playerDataService.ClearPlayerCaches();
             Core.Logger.LogInformation("Map start: {mapName}", mapName);
+        }
+
+        private void OnMapUnload(IOnMapUnloadEvent @event)
+        {
+            var playerDataService = GetRequiredService<IPlayerDataService>();
+
+            playerDataService.SaveAllPlayerCachesToDB();
+            playerDataService.ClearPlayerCaches();
         }
 
         private void OnPrecacheResource(IOnPrecacheResourceEvent @event)

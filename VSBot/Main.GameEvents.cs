@@ -27,12 +27,14 @@ namespace VSBot
                 var gameState = GetRequiredService<IGameStateService>();
                 var playerService = GetRequiredService<IPlayerService>();
                 var motd = GetRequiredService<UI.Interfaces.IMotd>();
+                var playerDataService = GetRequiredService<IPlayerDataService>();
 
                 gameState.AddPlayer(player);
                 playerService.AddPlayerPosition(player.SteamID);
                 playerService.AddPlayerWeaponStatus(player.SteamID);
                 SendConnectedMessage(gameState.Players.Values.ToList());
                 motd.Open(player.PlayerID);
+                playerDataService.PreparePlayerCache(player);
                 Core.Logger.LogInformation("{client} has connected at {DT}, IP: {ipAddress}, SteamID: {steamID}", player.Name, DateTime.Now, player.IPAddress, player.SteamID);
             }
 
@@ -58,12 +60,14 @@ namespace VSBot
                 var gameState = GetRequiredService<IGameStateService>();
                 var playerService = GetRequiredService<IPlayerService>();
                 var reviveCommand = GetRequiredService<IRevive>();
+                var playerDataService = GetRequiredService<IPlayerDataService>();
 
                 gameState.RemovePlayer(player.SteamID);
                 playerService.RemovePlayerPosition(player.SteamID);
                 playerService.RemovePlayerWeaponStatus(player.SteamID);
                 reviveCommand.OnPlayerDisconnect(player.SteamID);
                 SendDisconnectedMessage(gameState.Players.Values.ToList());
+                playerDataService.SaveAndRemovePlayerCache(player.SteamID);
                 Core.Logger.LogInformation("{client} has disconnected at {DT}", player.Name, DateTime.Now);
             }
 

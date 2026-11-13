@@ -18,7 +18,7 @@ using VSBot.UI.Interfaces;
 
 namespace VSBot
 {
-    [PluginMetadata(Author = "cynicat", Name = "VSBot Plugin", Id = "vsbot", Version = "26.11.23")]
+    [PluginMetadata(Author = "cynicat", Name = "VSBot Plugin", Id = "vsbot", Version = "26.11.24")]
     public partial class Main : BasePlugin
     {
         public static ISwiftlyCore SwiftlyCore => _serviceProvider?.GetRequiredService<ISwiftlyCore>()
@@ -71,6 +71,7 @@ namespace VSBot
             services.AddSingleton<IGameStateService, GameStateService>();
             services.AddSingleton<IPlayerService, PlayerService>();
             services.AddSingleton<ISaysoundService, SaysoundService>();
+            services.AddSingleton<IPlayerDataService, PlayerDataService>();
         }
 
         private void InitializeCommandModule()
@@ -109,6 +110,7 @@ namespace VSBot
         private void RegisterEvents()
         {
             Core.Event.OnMapLoad += OnMapLoad;
+            Core.Event.OnMapUnload += OnMapUnload;
             Core.Event.OnPrecacheResource += OnPrecacheResource;
         }
 
@@ -120,6 +122,7 @@ namespace VSBot
         private void UnregisterEvents()
         {
             Core.Event.OnMapLoad -= OnMapLoad;
+            Core.Event.OnMapUnload -= OnMapUnload;
             Core.Event.OnPrecacheResource -= OnPrecacheResource;
         }
 
