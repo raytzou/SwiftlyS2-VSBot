@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="34.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.15" />
     <PackageReference Include="Scrutor" Version="7.0.0" />
     <PackageReference Include="SwiftlyS2.CS2" Version="1.5.1" />
   </ItemGroup>

@@ -1,11 +1,14 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.GameEventDefinitions;
 using SwiftlyS2.Shared.Plugins;
 using VSBot.Classes;
 using VSBot.Commands.Interfaces;
+using VSBot.Infrastructure;
 using VSBot.Models;
 using VSBot.Modules;
 using VSBot.Services;
@@ -14,7 +17,7 @@ using VSBot.UI.Interfaces;
 
 namespace VSBot
 {
-    [PluginMetadata(Author = "cynicat", Name = "VSBot Plugin", Id = "vsbot", Version = "26.11.22")]
+    [PluginMetadata(Author = "cynicat", Name = "VSBot Plugin", Id = "vsbot", Version = "26.11.23")]
     public partial class Main : BasePlugin
     {
         public static ISwiftlyCore SwiftlyCore => _serviceProvider?.GetRequiredService<ISwiftlyCore>()
@@ -44,6 +47,7 @@ namespace VSBot
                     builder.AddJsonFile("config.jsonc", optional: false, reloadOnChange: true);
                 });
             GetRequiredService<ISaysoundService>().Initialize();
+            AddDbContext(services);
             Core.Logger.LogInformation("Plugin Loaded.");
         }
 
@@ -133,6 +137,20 @@ namespace VSBot
             {
                 Core.Command.UnregisterCommand(listener);
             }
+        }
+
+        private void AddDbContext(ServiceCollection services)
+        {
+            var config = GetRequiredService<IOptionsMonitor<Config>>();
+            var connectionString = config.CurrentValue.ConnectionString;
+
+            if (string.IsNullOrEmpty(connectionString))
+                throw new InvalidOperationException("Connection String is not set.");
+
+            services.AddDbContextFactory<VSBotDbContext>((sp, options) =>
+            {
+                options.UseSqlServer(config.CurrentValue.ConnectionString);
+            });
         }
 
         private T GetRequiredService<T>() where T : notnull
