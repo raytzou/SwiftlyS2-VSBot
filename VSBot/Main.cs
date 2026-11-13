@@ -8,6 +8,7 @@ using SwiftlyS2.Shared.GameEventDefinitions;
 using SwiftlyS2.Shared.Plugins;
 using VSBot.Classes;
 using VSBot.Commands.Interfaces;
+using VSBot.Domain.Repositories.Interfaces;
 using VSBot.Infrastructure;
 using VSBot.Models;
 using VSBot.Modules;
@@ -89,7 +90,10 @@ namespace VSBot
                     .WithTransientLifetime()
                 .AddClasses(c => c.Where(t => t.Namespace == "VSBot.UI" && typeof(IUIComponent).IsAssignableFrom(t)), publicOnly: false)
                     .AsImplementedInterfaces(i => i.Namespace == "VSBot.UI.Interfaces" && i != typeof(IUIComponent))
-                    .WithSingletonLifetime());
+                    .WithSingletonLifetime()
+                .AddClasses(c => c.Where(t => t.Namespace == "VSBot.Domain.Repositories" && t.IsClass && !t.IsAbstract && t.GetInterfaces().Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IRepository<,>))), publicOnly: false)
+                    .AsImplementedInterfaces(i => i.Namespace == "VSBot.Domain.Repositories.Interfaces" && !(i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRepository<,>)))
+                    .WithTransientLifetime());
 
             foreach (var descriptor in services.Skip(originalCount))
             {
