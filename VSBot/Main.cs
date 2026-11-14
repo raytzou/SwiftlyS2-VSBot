@@ -35,6 +35,7 @@ namespace VSBot
             ServiceCollection services = new();
 
             RegisterServices(services);
+            AddDbContext(services);
             RegisterByConvention(services);
             _serviceProvider = services.BuildServiceProvider();
             InitializeCommandModule();
@@ -48,7 +49,6 @@ namespace VSBot
                     builder.AddJsonFile("config.jsonc", optional: false, reloadOnChange: true);
                 });
             GetRequiredService<ISaysoundService>().Initialize();
-            AddDbContext(services);
             Core.Logger.LogInformation("Plugin Loaded.");
         }
 
@@ -148,15 +148,14 @@ namespace VSBot
 
         private void AddDbContext(ServiceCollection services)
         {
-            var config = GetRequiredService<IOptionsMonitor<Config>>();
-            var connectionString = config.CurrentValue.ConnectionString;
-
-            if (string.IsNullOrEmpty(connectionString))
-                throw new InvalidOperationException("Connection String is not set.");
-
             services.AddDbContextFactory<VSBotDbContext>((sp, options) =>
             {
-                options.UseSqlServer(config.CurrentValue.ConnectionString);
+                var connectionString = sp.GetRequiredService<IOptionsMonitor<Config>>().CurrentValue.ConnectionString;
+
+                if (string.IsNullOrEmpty(connectionString))
+                    throw new InvalidOperationException("Connection String is not set.");
+
+                options.UseSqlServer(connectionString);
             });
         }
 
