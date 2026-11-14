@@ -38,16 +38,12 @@ namespace VSBot
             AddDbContext(services);
             RegisterByConvention(services);
             _serviceProvider = services.BuildServiceProvider();
+            InitializeConfig();
             InitializeCommandModule();
             Utility.Initialize();
             RegisterEvents();
             RegisterListeners();
             GetRequiredService<IPatchService>().ApplyAllAutoPatches();
-            Core.Configuration.InitializeJsonWithModel<Config>("config.jsonc", "Main")
-                .Configure(builder =>
-                {
-                    builder.AddJsonFile("config.jsonc", optional: false, reloadOnChange: true);
-                });
             GetRequiredService<ISaysoundService>().Initialize();
             Core.Logger.LogInformation("Plugin Loaded.");
         }
@@ -157,6 +153,15 @@ namespace VSBot
 
                 options.UseSqlServer(connectionString);
             });
+        }
+
+        private void InitializeConfig()
+        {
+            Core.Configuration.InitializeJsonWithModel<Config>("config.jsonc", "Main")
+                .Configure(builder =>
+                {
+                    builder.AddJsonFile("config.jsonc", optional: false, reloadOnChange: true);
+                });
         }
 
         private T GetRequiredService<T>() where T : notnull
