@@ -54,6 +54,7 @@ namespace VSBot.Services
             }
 
             _playerCaches.Add(player.SteamID, playerData);
+            _logger.LogInformation("Player cache added: {steamId}", player.SteamID);
         }
 
         public Player? GetPlayerCache(ulong steamId) =>
