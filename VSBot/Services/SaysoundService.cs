@@ -13,12 +13,16 @@ namespace VSBot.Services
         private readonly IOptionsMonitor<Config> _config;
         private readonly ILogger<SaysoundService> _logger;
         private readonly ISwiftlyCore _core;
+        private readonly IGameStateService _gameStateService;
+        private readonly IPlayerDataService _playerDataService;
 
-        public SaysoundService(IOptionsMonitor<Config> config, ILogger<SaysoundService> logger, ISwiftlyCore core)
+        public SaysoundService(IOptionsMonitor<Config> config, ILogger<SaysoundService> logger, ISwiftlyCore core, IGameStateService gameStateService, IPlayerDataService playerDataService)
         {
             _config = config;
             _logger = logger;
             _core = core;
+            _gameStateService = gameStateService;
+            _playerDataService = playerDataService;
         }
 
         public Dictionary<string, (string SoundEvent, string Content, string TWContent, string JPContent)> Saysound => _saysound
@@ -67,16 +71,32 @@ namespace VSBot.Services
 
         public void PlaySaysound(string soundEventName, float pitch)
         {
-            const float volume = 0.5f;
-            var sound = new SoundEvent()
-            {
-                Name = soundEventName,
-                Volume = volume,
-                Pitch = pitch,
-            };
+            var players = _gameStateService.Players;
 
-            sound.Recipients.AddAllPlayers();
-            sound.Emit();
+            foreach (var playerPair in players)
+            {
+                var player = playerPair.Value;
+
+                if (player is null || !player.IsValid)
+                    continue;
+
+                var playerCache = _playerDataService.GetPlayerCache(player.SteamID);
+
+                if (playerCache is null)
+                    continue;
+
+                var volume = playerCache.SaysoundVolume / 100f;
+
+                var sound = new SoundEvent()
+                {
+                    Name = soundEventName,
+                    Volume = volume,
+                    Pitch = pitch,
+                };
+
+                sound.Recipients.AddRecipient(player.PlayerID);
+                sound.Emit();
+            }
         }
     }
 }

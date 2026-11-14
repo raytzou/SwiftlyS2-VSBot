@@ -19,6 +19,7 @@ namespace VSBot.Modules
         private readonly IRevive _revive;
         private readonly ISlay _slay;
         private readonly IMotd _motd;
+        private readonly ISaysoundVolume _saysoundVolume;
 
         public CommandModule(ISwiftlyCore core, ILogger<CommandModule> logger
             , IInfo info
@@ -31,6 +32,7 @@ namespace VSBot.Modules
             , IRevive revive
             , ISlay slay
             , IMotd motd
+            , ISaysoundVolume saysoundVolume
             )
         {
             _core = core;
@@ -45,6 +47,7 @@ namespace VSBot.Modules
             _revive = revive;
             _slay = slay;
             _motd = motd;
+            _saysoundVolume = saysoundVolume;
         }
 
         public void Initialize()
@@ -113,6 +116,12 @@ namespace VSBot.Modules
         public void OnMotdCommand(ICommandContext context)
         {
             _motd.ExecuteCommand(context);
+        }
+
+        [Command(name: "ss_vol", helpText: "Adjusts saysound volume")]
+        public void OnSaysoundVolumeCommand(ICommandContext context)
+        {
+            _saysoundVolume.ExecuteCommand(context);
         }
 
         /// <summary>
