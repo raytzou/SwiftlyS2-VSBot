@@ -33,6 +33,12 @@ namespace VSBot.Commands
 
             if (playerCache is null)
             {
+                if (_playerDataService.GetPlayerCacheState(player.SteamID) == PlayerCacheState.Loading)
+                {
+                    context.Reply("[sw] Your data is still loading, please try again later.");
+                    return;
+                }
+
                 context.Reply("Cannot set the volume of saysound, please contact admin!");
                 _logger.LogError("Cannot find the player's cache, {steamId}", player.SteamID);
                 return;

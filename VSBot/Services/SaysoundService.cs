@@ -15,6 +15,7 @@ namespace VSBot.Services
         private readonly ISwiftlyCore _core;
         private readonly IGameStateService _gameStateService;
         private readonly IPlayerDataService _playerDataService;
+        private const byte DefaultSaysoundVolume = 50;
 
         public SaysoundService(IOptionsMonitor<Config> config, ILogger<SaysoundService> logger, ISwiftlyCore core, IGameStateService gameStateService, IPlayerDataService playerDataService)
         {
@@ -81,11 +82,7 @@ namespace VSBot.Services
                     continue;
 
                 var playerCache = _playerDataService.GetPlayerCache(player.SteamID);
-
-                if (playerCache is null)
-                    continue;
-
-                var volume = playerCache.SaysoundVolume / 100f;
+                var volume = (playerCache?.SaysoundVolume ?? DefaultSaysoundVolume) / 100f;
 
                 var sound = new SoundEvent()
                 {

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using VSBot.Domain.Entities;
 using VSBot.Domain.Repositories.Interfaces;
 using VSBot.Infrastructure;
@@ -14,61 +14,61 @@ namespace VSBot.Domain.Repositories
             _factory = factory;
         }
 
-        public Player? GetByKey(ulong kay)
+        public async Task<Player?> GetByKeyAsync(ulong kay, CancellationToken cancellationToken = default)
         {
-            using var dbContext = _factory.CreateDbContext();
+            await using var dbContext = await _factory.CreateDbContextAsync(cancellationToken);
 
-            return dbContext.Players
+            return await dbContext.Players
                 .AsNoTracking()
-                .FirstOrDefault(f => f.SteamId == kay);
+                .FirstOrDefaultAsync(f => f.SteamId == kay, cancellationToken);
         }
 
-        public void Add(Player entity)
+        public async Task AddAsync(Player entity, CancellationToken cancellationToken = default)
         {
-            using var dbContext = _factory.CreateDbContext();
+            await using var dbContext = await _factory.CreateDbContextAsync(cancellationToken);
 
             dbContext.Players.Add(entity);
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public void AddRange(IEnumerable<Player> entities)
+        public async Task AddRangeAsync(IEnumerable<Player> entities, CancellationToken cancellationToken = default)
         {
-            using var dbContext = _factory.CreateDbContext();
+            await using var dbContext = await _factory.CreateDbContextAsync(cancellationToken);
 
             dbContext.Players.AddRange(entities);
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public void Update(Player entity)
+        public async Task UpdateAsync(Player entity, CancellationToken cancellationToken = default)
         {
-            using var dbContext = _factory.CreateDbContext();
+            await using var dbContext = await _factory.CreateDbContextAsync(cancellationToken);
 
             dbContext.Players.Update(entity);
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public void UpdateRange(IEnumerable<Player> entities)
+        public async Task UpdateRangeAsync(IEnumerable<Player> entities, CancellationToken cancellationToken = default)
         {
-            using var dbContext = _factory.CreateDbContext();
+            await using var dbContext = await _factory.CreateDbContextAsync(cancellationToken);
 
             dbContext.Players.UpdateRange(entities);
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public void Delete(Player entity)
+        public async Task DeleteAsync(Player entity, CancellationToken cancellationToken = default)
         {
-            using var dbContext = _factory.CreateDbContext();
+            await using var dbContext = await _factory.CreateDbContextAsync(cancellationToken);
 
             dbContext.Players.Remove(entity);
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public void DeleteRange(IEnumerable<Player> entities)
+        public async Task DeleteRangeAsync(IEnumerable<Player> entities, CancellationToken cancellationToken = default)
         {
-            using var dbContext = _factory.CreateDbContext();
+            await using var dbContext = await _factory.CreateDbContextAsync(cancellationToken);
 
             dbContext.Players.RemoveRange(entities);
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
     }
 }

@@ -18,7 +18,7 @@ using VSBot.UI.Interfaces;
 
 namespace VSBot
 {
-    [PluginMetadata(Author = "cynicat", Name = "VSBot Plugin", Id = "vsbot", Version = "26.11.25")]
+    [PluginMetadata(Author = "cynicat", Name = "VSBot Plugin", Id = "vsbot", Version = "26.11.26")]
     public partial class Main : BasePlugin
     {
         public static ISwiftlyCore SwiftlyCore => _serviceProvider?.GetRequiredService<ISwiftlyCore>()
@@ -39,6 +39,8 @@ namespace VSBot
             RegisterByConvention(services);
             _serviceProvider = services.BuildServiceProvider();
             InitializeConfig();
+            GetRequiredService<IDatabaseWorker>().Start();
+            GetRequiredService<IPlayerDataService>().WarmUp();
             InitializeCommandModule();
             Utility.Initialize();
             RegisterEvents();
@@ -53,7 +55,50 @@ namespace VSBot
             UnregisterEvents();
             UnhookGameEvents();
             UnregisterListeners();
-            _serviceProvider?.Dispose();
+
+            var provider = _serviceProvider;
+            if (provider is null) return;
+
+            var logger = Core.Logger;
+            var worker = provider.GetRequiredService<IDatabaseWorker>();
+
+            try
+            {
+                provider.GetRequiredService<IPlayerDataService>().PrepareShutdown();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to prepare player data for shutdown.");
+            }
+
+            var drained = worker.Shutdown(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(1));
+
+            _serviceProvider = null;
+
+            if (drained)
+            {
+                provider.Dispose();
+                return;
+            }
+
+            logger.LogWarning("Database worker is still running, the service provider will be disposed after it completes.");
+            DisposeProviderAfterWorker(provider, worker, logger);
+        }
+
+        private static void DisposeProviderAfterWorker(ServiceProvider provider, IDatabaseWorker worker, ILogger logger)
+        {
+            _ = worker.Completion.ContinueWith(task =>
+            {
+                try
+                {
+                    _ = task.Exception;
+                    provider.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to dispose the service provider after the database worker completed.");
+                }
+            }, TaskScheduler.Default);
         }
 
         private void RegisterServices(IServiceCollection services)
@@ -68,6 +113,7 @@ namespace VSBot
             services.AddSingleton<IPlayerService, PlayerService>();
             services.AddSingleton<ISaysoundService, SaysoundService>();
             services.AddSingleton<IPlayerDataService, PlayerDataService>();
+            services.AddSingleton<IDatabaseWorker, DatabaseWorker>();
         }
 
         private void InitializeCommandModule()
@@ -151,7 +197,7 @@ namespace VSBot
                 if (string.IsNullOrEmpty(connectionString))
                     throw new InvalidOperationException("Connection String is not set.");
 
-                options.UseSqlServer(connectionString);
+                options.UseSqlServer(connectionString, sql => sql.CommandTimeout(10));
             });
         }
 
