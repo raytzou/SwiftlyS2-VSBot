@@ -9,5 +9,12 @@ namespace VSBot.Infrastructure
 
 
         public DbSet<Player> Players => Set<Player>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Player>()
+                .Property(p => p.SteamId)
+                .HasConversion<long>();
+        }
     }
 }
