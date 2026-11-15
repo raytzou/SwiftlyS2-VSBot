@@ -150,26 +150,39 @@ namespace VSBot
 
             void BroadcastRoundStartMessages()
             {
-                foreach (var playerPair in gameState.Players)
+                if (gameState.CurrentRound < maxRound)
                 {
-                    var player = playerPair.Value;
+                    var currentRound = gameState.CurrentRound;
+                    var currentLevel = gameState.CurrentBotLevel;
+                    var botMaxRespawnTimes = gameState.CurrentBotMaxRespawnTimes;
+                    var availableRounds = maxRound - 1;
+                    var winStreak = gameState.WinStreak;
 
-                    if (player is null || !player.IsValid)
-                        continue;
-
-                    if (gameState.CurrentRound < maxRound)
+                    foreach (var playerPair in gameState.Players)
                     {
-                        var currentRound = gameState.CurrentRound;
-                        var currentLevel = gameState.CurrentBotLevel;
-                        var botMaxRespawnTimes = gameState.CurrentBotMaxRespawnTimes;
-                        var availableRounds = maxRound - 1;
+                        var player = playerPair.Value;
+
+                        if (player is null || !player.IsValid)
+                            continue;
 
                         player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Round: {ChatColors.Yellow}{currentRound}{ChatColors.Grey}/{availableRounds}");
                         player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Level: {ChatColors.Red}{currentLevel}{ChatColors.Grey}/{BotProfile.MaxLevel}");
+
+                        if (winStreak > 0)
+                            player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Win Streak: {ChatColors.Lime}{gameState.WinStreak}");
+
                         player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Max Respawn Times: {ChatColors.Purple}{botMaxRespawnTimes}");
                     }
-                    else
+                }
+                else
+                {
+                    foreach (var playerPair in gameState.Players)
                     {
+                        var player = playerPair.Value;
+
+                        if (player is null || !player.IsValid)
+                            continue;
+
                         player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Game over, otu!");
                     }
                 }
