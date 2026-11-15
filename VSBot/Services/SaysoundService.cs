@@ -29,12 +29,7 @@ namespace VSBot.Services
             _playerDataService = playerDataService;
         }
 
-        public Dictionary<string, (string SoundEvent, string Content, string TWContent, string JPContent)> Saysound => _saysound
-            ?? throw new InvalidOperationException("Saysound is not initialized");
-
-        private Dictionary<string, (string SoundEvent, string Content, string TWContent, string JPContent)>? _saysound;
-
-        public IReadOnlyDictionary<string, float> PitchMapper => _pitchMapper;
+        private Dictionary<string, (string SoundEvent, string Content, string TWContent, string JPContent)>? _saysounds;
 
         private static readonly IReadOnlyDictionary<string, float> _pitchMapper = new Dictionary<string, float>()
         {
@@ -44,6 +39,21 @@ namespace VSBot.Services
             { "s", 0.85f },
             { "d", 0.75f }
         };
+
+        public bool IsInitialized => _saysounds is not null;
+
+        public bool IsPitchText(string pitchText) => _pitchMapper.TryGetValue(pitchText, out var _) || pitchText == "r";
+
+        public bool IsSaysound(string saysoundKeyword)
+        {
+            if (_saysounds is null)
+            {
+                _logger.LogError("Saysound is not initialized");
+                return false;
+            }
+
+            return _saysounds.TryGetValue(saysoundKeyword, out var _);
+        }
 
         public void Initialize()
         {
@@ -57,7 +67,7 @@ namespace VSBot.Services
                 throw new InvalidOperationException("Saysound CSV File name is not set.");
             }
 
-            _saysound = new();
+            _saysounds = new();
 
             using var csv = CsvReader.FromFile(fullPath);
 
@@ -73,7 +83,7 @@ namespace VSBot.Services
                 var englishContent = csv.GetString("EnglishContent");
                 var soundEvent = csv.GetString("SoundEvent");
 
-                _saysound.Add(saysoundName, new(
+                _saysounds.Add(saysoundName, new(
                     soundEvent,
                     englishContent,
                     tChineseContent,
@@ -81,11 +91,27 @@ namespace VSBot.Services
                 ));
             }
 
-            _logger.LogInformation("Saysound Initialized, count: {count}", _saysound.Count);
+            _logger.LogInformation("Saysound Initialized, count: {count}", _saysounds.Count);
         }
 
-        public void PlaySaysound(string soundEventName, float pitch)
+        public void PlaySaysound(string saysoundKeyword, string pitchText)
         {
+            if (_saysounds is null)
+            {
+                _logger.LogError("Saysound is not initialized");
+                return;
+            }
+
+            if (!IsSaysound(saysoundKeyword))
+            {
+                _logger.LogError("Cannot find the saysound, keyword: {keyword}", saysoundKeyword);
+                return;
+            }
+
+            var soundEventName = _saysounds[saysoundKeyword].SoundEvent;
+            var pitch = pitchText == "r" ?
+                Random.Shared.Next(75, 150) / 100f : string.IsNullOrEmpty(pitchText) ?
+                1f : _pitchMapper[pitchText];
             var players = _gameStateService.Players;
 
             foreach (var playerPair in players)
@@ -112,15 +138,21 @@ namespace VSBot.Services
 
         public void BroadcastSaysound(int playerId, string saysoundKeyword, string pitchText)
         {
-            if (_saysound is null)
+            if (_saysounds is null)
             {
                 _logger.LogError("Saysound is not initialized");
-                throw new NullReferenceException("Saysound is not initialized");
+                return;
+            }
+
+            if (!IsSaysound(saysoundKeyword))
+            {
+                _logger.LogError("Cannot find the saysound, keyword: {keyword}", saysoundKeyword);
+                return;
             }
 
             var sender = _core.PlayerManager.GetPlayer(playerId);
             var players = _gameStateService.Players;
-            var saysound = _saysound[saysoundKeyword];
+            var saysound = _saysounds[saysoundKeyword];
 
             foreach (var playerPair in players)
             {

@@ -1,4 +1,5 @@
-﻿using SwiftlyS2.Shared.Misc;
+﻿using Microsoft.Extensions.Logging;
+using SwiftlyS2.Shared.Misc;
 using VSBot.Services.Interfaces;
 
 namespace VSBot
@@ -13,40 +14,29 @@ namespace VSBot
                 return HookResult.Continue;
 
             var saysoundService = GetRequiredService<ISaysoundService>();
-            var saysounds = saysoundService.Saysound;
+
+            if (!saysoundService.IsInitialized)
+            {
+                Core.Logger.LogError("Saysound is not initialized");
+                return HookResult.Continue;
+            }
+
             var saysoundKeyword = textArray[0];
             var pitchText = textArray.Length < 2 ? string.Empty : textArray[1];
+            var isSaysound = saysoundService.IsSaysound(saysoundKeyword);
 
-            if (!saysounds.TryGetValue(saysoundKeyword, out var _))
+            if (!isSaysound)
                 return HookResult.Continue;
 
-            var isPitchText = saysoundService.PitchMapper.TryGetValue(pitchText, out var _) || pitchText == "r";
+            var isPitchText = saysoundService.IsPitchText(pitchText);
 
             if (textArray.Length == 2 && !isPitchText)
                 return HookResult.Continue;
 
-            try
-            {
-                ProcessSaysound(playerId, saysoundKeyword, pitchText);
-            }
-            catch (NullReferenceException) // Saysound is not initialized
-            {
-                return HookResult.Continue;
-            }
+            saysoundService.BroadcastSaysound(playerId, saysoundKeyword, pitchText);
+            saysoundService.PlaySaysound(saysoundKeyword, pitchText);
 
             return HookResult.Stop;
-        }
-
-        private void ProcessSaysound(int playerId, string saysoundKeyword, string pitchText)
-        {
-            var saysoundService = GetRequiredService<ISaysoundService>();
-            var saysound = saysoundService.Saysound[saysoundKeyword];
-            var pitch = pitchText == "r" ?
-                Random.Shared.Next(75, 150) / 100f : string.IsNullOrEmpty(pitchText) ?
-                1f : saysoundService.PitchMapper[pitchText];
-
-            saysoundService.BroadcastSaysound(playerId, saysoundKeyword, pitchText);
-            saysoundService.PlaySaysound(saysound.SoundEvent, pitch);
         }
     }
 }
