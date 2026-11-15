@@ -3,8 +3,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.Sounds;
+using SwiftlyS2.Shared.Translation;
+using VSBot.Classes;
 using VSBot.Models;
 using VSBot.Services.Interfaces;
+using static SwiftlyS2.Shared.Helper;
 
 namespace VSBot.Services
 {
@@ -30,6 +33,17 @@ namespace VSBot.Services
             ?? throw new InvalidOperationException("Saysound is not initialized");
 
         private Dictionary<string, (string SoundEvent, string Content, string TWContent, string JPContent)>? _saysound;
+
+        public IReadOnlyDictionary<string, float> PitchMapper => _pitchMapper;
+
+        private static readonly IReadOnlyDictionary<string, float> _pitchMapper = new Dictionary<string, float>()
+        {
+            { "qq", 1.5f },
+            { "q", 1.3f },
+            { "f", 1.15f },
+            { "s", 0.85f },
+            { "d", 0.75f }
+        };
 
         public void Initialize()
         {
@@ -93,6 +107,41 @@ namespace VSBot.Services
 
                 sound.Recipients.AddRecipient(player.PlayerID);
                 sound.Emit();
+            }
+        }
+
+        public void BroadcastSaysound(int playerId, string saysoundKeyword, string pitchText)
+        {
+            if (_saysound is null)
+            {
+                _logger.LogError("Saysound is not initialized");
+                throw new NullReferenceException("Saysound is not initialized");
+            }
+
+            var sender = _core.PlayerManager.GetPlayer(playerId);
+            var players = _gameStateService.Players;
+            var saysound = _saysound[saysoundKeyword];
+
+            foreach (var playerPair in players)
+            {
+                var player = playerPair.Value;
+
+                if (player is null || !player.IsValid)
+                    continue;
+
+                var playerLanguage = player.PlayerLanguage;
+                var content = saysound.Content;
+
+                if (playerLanguage.Equals(Language.ChineseTW))
+                    content = saysound.TWContent;
+
+                if (playerLanguage.Equals(Language.Japanese))
+                    content = saysound.JPContent;
+
+                var displayText = _pitchMapper.TryGetValue(pitchText, out var _) || pitchText == "r" ?
+                    $"{saysoundKeyword} {pitchText}" : saysoundKeyword;
+
+                player.SendChat($" {Utility.GetTeamColorByPlayer(player)}{sender?.Name}: {ChatColors.Grey}[{displayText}] {ChatColors.Green}{content}");
             }
         }
     }

@@ -1,22 +1,10 @@
 ﻿using SwiftlyS2.Shared.Misc;
-using SwiftlyS2.Shared.Translation;
-using VSBot.Classes;
 using VSBot.Services.Interfaces;
-using static SwiftlyS2.Shared.Helper;
 
 namespace VSBot
 {
     public partial class Main
     {
-        private static readonly IReadOnlyDictionary<string, float> _pitchMapper = new Dictionary<string, float>()
-        {
-            { "qq", 1.5f },
-            { "q", 1.3f },
-            { "f", 1.15f },
-            { "s", 0.85f },
-            { "d", 0.75f }
-        };
-
         private HookResult SaysoundListener(int playerId, string text, bool teamonly)
         {
             var textArray = text.Split(' ');
@@ -32,12 +20,19 @@ namespace VSBot
             if (!saysounds.TryGetValue(saysoundKeyword, out var _))
                 return HookResult.Continue;
 
-            var isPitchText = _pitchMapper.TryGetValue(pitchText, out var _) || pitchText == "r";
+            var isPitchText = saysoundService.PitchMapper.TryGetValue(pitchText, out var _) || pitchText == "r";
 
             if (textArray.Length == 2 && !isPitchText)
                 return HookResult.Continue;
 
-            ProcessSaysound(playerId, saysoundKeyword, pitchText);
+            try
+            {
+                ProcessSaysound(playerId, saysoundKeyword, pitchText);
+            }
+            catch (NullReferenceException) // Saysound is not initialized
+            {
+                return HookResult.Continue;
+            }
 
             return HookResult.Stop;
         }
@@ -48,41 +43,10 @@ namespace VSBot
             var saysound = saysoundService.Saysound[saysoundKeyword];
             var pitch = pitchText == "r" ?
                 Random.Shared.Next(75, 150) / 100f : string.IsNullOrEmpty(pitchText) ?
-                1f : _pitchMapper[pitchText];
+                1f : saysoundService.PitchMapper[pitchText];
 
-            BroadcastSaysound(playerId, saysoundKeyword, pitchText);
+            saysoundService.BroadcastSaysound(playerId, saysoundKeyword, pitchText);
             saysoundService.PlaySaysound(saysound.SoundEvent, pitch);
-        }
-
-        private void BroadcastSaysound(int playerId, string saysoundKeyword, string pitchText)
-        {
-            var sender = Core.PlayerManager.GetPlayer(playerId);
-            var gameStateService = GetRequiredService<IGameStateService>();
-            var players = gameStateService.Players;
-            var saysoundService = GetRequiredService<ISaysoundService>();
-            var saysound = saysoundService.Saysound[saysoundKeyword];
-
-            foreach (var playerPair in players)
-            {
-                var player = playerPair.Value;
-
-                if (player is null || !player.IsValid)
-                    continue;
-
-                var playerLanguage = player.PlayerLanguage;
-                var content = saysound.Content;
-
-                if (playerLanguage.Equals(Language.ChineseTW))
-                    content = saysound.TWContent;
-
-                if (playerLanguage.Equals(Language.Japanese))
-                    content = saysound.JPContent;
-
-                var displayText = _pitchMapper.TryGetValue(pitchText, out var _) || pitchText == "r" ?
-                    $"{saysoundKeyword} {pitchText}" : saysoundKeyword;
-
-                player.SendChat($" {Utility.GetTeamColorByPlayer(player)}{sender?.Name}: {ChatColors.Grey}[{displayText}] {ChatColors.Green}{content}");
-            }
         }
     }
 }
