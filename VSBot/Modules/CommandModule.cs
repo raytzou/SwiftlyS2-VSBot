@@ -20,6 +20,7 @@ namespace VSBot.Modules
         private readonly ISlay _slay;
         private readonly IMotd _motd;
         private readonly ISaysoundVolume _saysoundVolume;
+        private readonly ISaysoundLanguage _saysoundLanguage;
 
         public CommandModule(ISwiftlyCore core, ILogger<CommandModule> logger
             , IInfo info
@@ -33,6 +34,7 @@ namespace VSBot.Modules
             , ISlay slay
             , IMotd motd
             , ISaysoundVolume saysoundVolume
+            , ISaysoundLanguage saysoundLanguage
             )
         {
             _core = core;
@@ -48,6 +50,7 @@ namespace VSBot.Modules
             _slay = slay;
             _motd = motd;
             _saysoundVolume = saysoundVolume;
+            _saysoundLanguage = saysoundLanguage;
         }
 
         public void Initialize()
@@ -122,6 +125,12 @@ namespace VSBot.Modules
         public void OnSaysoundVolumeCommand(ICommandContext context)
         {
             _saysoundVolume.ExecuteCommand(context);
+        }
+
+        [Command(name: "ss_lang", helpText: "Chooses saysound language")]
+        public void OnSaysoundLanguageCommand(ICommandContext context)
+        {
+            _saysoundLanguage.ExecuteCommand(context);
         }
 
         /// <summary>

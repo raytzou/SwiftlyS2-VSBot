@@ -161,7 +161,8 @@ namespace VSBot.Services
                 if (player is null || !player.IsValid)
                     continue;
 
-                var playerLanguage = player.PlayerLanguage;
+                var playerCache = _playerDataService.GetPlayerCache(player.SteamID);
+                var playerLanguage = string.IsNullOrEmpty(playerCache?.Language) ? player.PlayerLanguage : playerCache.Language;
                 var content = saysound.Content;
 
                 if (playerLanguage.Equals(Language.ChineseTW))
