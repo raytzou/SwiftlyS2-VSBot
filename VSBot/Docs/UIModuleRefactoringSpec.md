@@ -1,6 +1,6 @@
 # UIModule 重構規格書
 
-更新日期為 2026-11-17。本次僅更新規格，後續實作以以下範圍為準。
+更新日期為 2026-11-17。以下為本輪實作範圍；實作與驗證結果見文末。
 
 ## 目標
 
@@ -65,3 +65,13 @@ Main 對 InitializeUIModule 的 MapReady 訂閱先 -= 再 +=，回呼執行後�
 3. 以 +map 接 Workshop collection 啟動，再切圖數次，每次語言選擇仍只有一次處理，Scoreboard 正常更新。
 4. MapUnload 後字典及 Layout reference 清空，新 MapReady 可重新建立；Plugin.Unload 後全域訂閱解除。
 5. 重複清理安全，UI 開啟中卸載可釋放所屬 HUD 與輸入。建置通過後，在 CS2 server 驗證這些原生行為。
+
+## 實作與驗證結果（2026-11-17）
+
+- 已完成上述九個程式檔案的修改，未擴大至其他模組或 UI 業務邏輯。
+- 以 SwiftlyS2.CS2 1.5.1 套件對應原始碼 commit `821ccf1acd11e81423238ee17e8873e08ebe68f0` 核對 API：清理時先清空自身 Layout reference，僅對 `IsValid` 的 HUD 執行 `Despawn()`。互動 UI 先逐一釋放 per-player input capture，單一玩家釋放失敗會記錄並繼續，finally 仍嘗試移除 HUD。
+- SDK 依據：[CEntityInstanceImpl](https://github.com/swiftly-solution/swiftlys2/blob/821ccf1acd11e81423238ee17e8873e08ebe68f0/managed/src/SwiftlyS2.Core/Modules/Schemas/Extensions/CEntityInstanceImpl.cs)、[CCSCustomHudLayoutImpl](https://github.com/swiftly-solution/swiftlys2/blob/821ccf1acd11e81423238ee17e8873e08ebe68f0/managed/src/SwiftlyS2.Core/Modules/Schemas/Extensions/CCSCustomHudLayoutImpl.cs)。全域 input capture 與 per-player 狀態分開，因此不只設定全域為 false。
+- `dotnet build VSBot.slnx --no-restore` 通過：0 errors，13 個既有 `Commands/Buy.cs` 舊選單 API 警告，與修改前相同。
+- Repository 外的獨立測試程式直接編譯本次 UIModule 與介面原始碼，以 SDK 邊界替身及假 UI 驗證以下九項：重複 Register、同圖重複 Initialize、依 Layout 分派且保留 PlayerId、清空路由及 Layout、換圖後重建且維持單一訂閱、個別清理失敗仍繼續、初始化失敗回復、失敗後可重新初始化、重複 Unload 並解除訂閱。全部通過；這不等同原生 HUD 整合測試。
+- 已檢查全域點擊訂閱／解除只存在 UIModule、Scrutor 排除兩個管理介面、UI 清理早於 DB shutdown，以及 MapReady 回呼的訂閱／解除位置。
+- 尚待 CS2 server 實測：兩名玩家各自操作 MOTD／語言選單、啟動 `+map` 後進 Workshop collection、多次換圖、Scoreboard 更新，以及 UI 開啟中卸載時的輸入與 Entity 釋放。建置與替身測試不能證明這些原生行為已通過。
