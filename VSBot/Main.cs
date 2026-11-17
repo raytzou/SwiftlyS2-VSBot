@@ -43,6 +43,7 @@ namespace VSBot
             GetRequiredService<IPlayerDataService>().WarmUp();
             InitializeCommandModule();
             Utility.Initialize();
+            GetRequiredService<UIModule>().Register();
             RegisterEvents();
             RegisterListeners();
             GetRequiredService<IPatchService>().ApplyAllAutoPatches();
@@ -58,6 +59,9 @@ namespace VSBot
 
             var provider = _serviceProvider;
             if (provider is null) return;
+
+            provider.GetRequiredService<IGameStateService>().MapReady -= InitializeUIModule;
+            provider.GetRequiredService<UIModule>().Unload();
 
             var logger = Core.Logger;
             var worker = provider.GetRequiredService<IDatabaseWorker>();
@@ -105,7 +109,7 @@ namespace VSBot
         {
             services.AddSwiftly(Core).AddOptionsWithValidateOnStart<Config>().BindConfiguration("Main");
             services.AddTransient<CommandModule>();
-            services.AddTransient<UIModule>();
+            services.AddSingleton<UIModule>();
             services.AddSingleton<BotModule>();
             services.AddSingleton<INativeMemoryService, NativeMemoryService>();
             services.AddSingleton<IPatchService, PatchService>();
@@ -132,7 +136,8 @@ namespace VSBot
                     .AsImplementedInterfaces(i => i.Namespace == "VSBot.Commands.Interfaces" && i != typeof(ICommand))
                     .WithTransientLifetime()
                 .AddClasses(c => c.Where(t => t.Namespace == "VSBot.UI" && typeof(IUIComponent).IsAssignableFrom(t)), publicOnly: false)
-                    .AsImplementedInterfaces(i => i.Namespace == "VSBot.UI.Interfaces" && i != typeof(IUIComponent))
+                    .AsImplementedInterfaces(i => i.Namespace == "VSBot.UI.Interfaces" && i != typeof(IUIComponent)
+                        && i != typeof(IUIComponentLifecycle) && i != typeof(IClickableUIComponent))
                     .WithSingletonLifetime()
                 .AddClasses(c => c.Where(t => t.Namespace == "VSBot.Domain.Repositories" && t.IsClass && !t.IsAbstract && t.GetInterfaces().Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IRepository<,>))), publicOnly: false)
                     .AsImplementedInterfaces(i => i.Namespace == "VSBot.Domain.Repositories.Interfaces" && !(i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRepository<,>)))

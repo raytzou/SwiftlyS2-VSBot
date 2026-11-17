@@ -8,7 +8,7 @@ using VSBot.UI.Interfaces;
 
 namespace VSBot.UI
 {
-    public class SaysoundLanguage : ISaysoundLanguage
+    public class SaysoundLanguage : ISaysoundLanguage, IUIComponentLifecycle, IClickableUIComponent
     {
         private readonly ISwiftlyCore _core;
         private readonly ILogger<SaysoundLanguage> _logger;
@@ -23,7 +23,38 @@ namespace VSBot.UI
 
         private CCSCustomHudLayout? _saysoundLanguageUI;
 
-        public void Initialize()
+        CCSCustomHudLayout? IUIComponentLifecycle.Layout => _saysoundLanguageUI;
+
+        void IUIComponentLifecycle.Unload()
+        {
+            var layout = _saysoundLanguageUI;
+            _saysoundLanguageUI = null;
+
+            if (layout is null || !layout.IsValid) return;
+
+            try
+            {
+                // Per-player capture overrides the global HUD state.
+                for (var playerId = 0; playerId < _core.PlayerManager.MaxPlayers; playerId++)
+                {
+                    try
+                    {
+                        if (layout.IsInputCaptureEnabledForPlayer(playerId))
+                            layout.SetInputCaptureEnabledForPlayer(playerId, false);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to release HUD input for player {PlayerId}.", playerId);
+                    }
+                }
+            }
+            finally
+            {
+                if (layout.IsValid) layout.Despawn();
+            }
+        }
+
+        void IUIComponentLifecycle.Initialize()
         {
             var maxPlayers = _core.PlayerManager.MaxPlayers;
 
@@ -31,7 +62,6 @@ namespace VSBot.UI
             _saysoundLanguageUI.StrLayout = "panorama/layout/custom_game/ss_lang.xml";
             _saysoundLanguageUI.StrLayoutUpdated();
             _saysoundLanguageUI.DispatchSpawn();
-            _core.Event.OnCustomHudClicked += OnClicked;
         }
 
         public void Open(int playerId)
@@ -96,16 +126,13 @@ namespace VSBot.UI
             _saysoundLanguageUI.SetInputCaptureEnabledForPlayer(playerId, true);
         }
 
-        public void OnClicked(IOnCustomHudClickedEvent @event)
+        void IClickableUIComponent.OnClicked(IOnCustomHudClickedEvent @event)
         {
             if (_saysoundLanguageUI is null)
             {
                 _logger.LogError("SaysoundLanguage is null.");
                 throw new InvalidOperationException("SaysoundLanguage is null. Is ModuleUI initialized?");
             }
-
-            if (@event.CustomHudLayout.Address != _saysoundLanguageUI.Address) // TODO: UIModule UIEventDispatcher
-                return;
 
             var player = _core.PlayerManager.GetPlayer(@event.PlayerId);
 

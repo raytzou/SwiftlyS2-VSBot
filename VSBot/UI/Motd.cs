@@ -6,7 +6,7 @@ using VSBot.UI.Interfaces;
 
 namespace VSBot.UI
 {
-    public class Motd : IMotd
+    public class Motd : IMotd, IUIComponentLifecycle, IClickableUIComponent
     {
         private readonly ISwiftlyCore _core;
         private readonly ILogger<Motd> _logger;
@@ -18,6 +18,37 @@ namespace VSBot.UI
         }
 
         private CCSCustomHudLayout? _motd;
+
+        CCSCustomHudLayout? IUIComponentLifecycle.Layout => _motd;
+
+        void IUIComponentLifecycle.Unload()
+        {
+            var layout = _motd;
+            _motd = null;
+
+            if (layout is null || !layout.IsValid) return;
+
+            try
+            {
+                // Per-player capture overrides the global HUD state.
+                for (var playerId = 0; playerId < _core.PlayerManager.MaxPlayers; playerId++)
+                {
+                    try
+                    {
+                        if (layout.IsInputCaptureEnabledForPlayer(playerId))
+                            layout.SetInputCaptureEnabledForPlayer(playerId, false);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to release HUD input for player {PlayerId}.", playerId);
+                    }
+                }
+            }
+            finally
+            {
+                if (layout.IsValid) layout.Despawn();
+            }
+        }
 
         public void Close(int playerId)
         {
@@ -40,16 +71,15 @@ namespace VSBot.UI
             );
         }
 
-        public void Initialize()
+        void IUIComponentLifecycle.Initialize()
         {
             _motd = _core.EntitySystem.CreateEntity<CCSCustomHudLayout>();
             _motd.StrLayout = "panorama/layout/custom_game/cs16_style_motd.xml";
             _motd.StrLayoutUpdated();
             _motd.DispatchSpawn();
-            _core.Event.OnCustomHudClicked += OnClicked;
         }
 
-        public void OnClicked(IOnCustomHudClickedEvent @event)
+        void IClickableUIComponent.OnClicked(IOnCustomHudClickedEvent @event)
         {
             if (_motd == null)
             {
