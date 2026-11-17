@@ -52,11 +52,7 @@ namespace VSBot.UI
 
         public void Close(int playerId)
         {
-            if (_motd == null)
-            {
-                _logger.LogError("Motd is null.");
-                throw new InvalidOperationException("Motd is null. Is ModuleUI initialized?");
-            }
+            if (_motd is null || !_motd.IsValid) return;
 
             _motd.SetHasClassForPlayer(
                 playerId,
@@ -81,11 +77,7 @@ namespace VSBot.UI
 
         void IClickableUIComponent.OnClicked(IOnCustomHudClickedEvent @event)
         {
-            if (_motd == null)
-            {
-                _logger.LogError("Motd is null.");
-                throw new InvalidOperationException("Motd is null. Is ModuleUI initialized?");
-            }
+            if (_motd is null || !_motd.IsValid) return;
 
             var player = _core.PlayerManager.GetPlayer(@event.PlayerId);
 
@@ -103,11 +95,7 @@ namespace VSBot.UI
 
         public void Open(int playerId)
         {
-            if (_motd == null)
-            {
-                _logger.LogError("Motd is null.");
-                throw new InvalidOperationException("Motd is null. Is ModuleUI initialized?");
-            }
+            if (_motd is null || !_motd.IsValid) return;
 
             var player = _core.PlayerManager.GetPlayer(playerId);
 

@@ -28,8 +28,6 @@ namespace VSBot
 
             ResetDefaultWeapon();
             ResetMaxRounds();
-            gameState.MapReady -= InitializeUIModule;
-            gameState.MapReady += InitializeUIModule;
             gameState.MapReady += AddMoreSpawnPoints;
             gameState.MapReady += SetHumanTeam;
             gameState.ClearPlayers();
@@ -43,7 +41,6 @@ namespace VSBot
 
         private void OnMapUnload(IOnMapUnloadEvent @event)
         {
-            GetRequiredService<IGameStateService>().MapReady -= InitializeUIModule;
             GetRequiredService<UIModule>().OnMapUnload();
 
             var playerDataService = GetRequiredService<IPlayerDataService>();
@@ -155,15 +152,5 @@ namespace VSBot
             }
         }
 
-        private void InitializeUIModule()
-        {
-            var gameState = GetRequiredService<IGameStateService>();
-
-            gameState.MapReady -= InitializeUIModule;
-
-            var UIModule = GetRequiredService<UIModule>();
-
-            UIModule.Initialize();
-        }
     }
 }

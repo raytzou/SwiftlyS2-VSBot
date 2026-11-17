@@ -75,3 +75,22 @@ Main 對 InitializeUIModule 的 MapReady 訂閱先 -= 再 +=，回呼執行後�
 - Repository 外的獨立測試程式直接編譯本次 UIModule 與介面原始碼，以 SDK 邊界替身及假 UI 驗證以下九項：重複 Register、同圖重複 Initialize、依 Layout 分派且保留 PlayerId、清空路由及 Layout、換圖後重建且維持單一訂閱、個別清理失敗仍繼續、初始化失敗回復、失敗後可重新初始化、重複 Unload 並解除訂閱。全部通過；這不等同原生 HUD 整合測試。
 - 已檢查全域點擊訂閱／解除只存在 UIModule、Scrutor 排除兩個管理介面、UI 清理早於 DB shutdown，以及 MapReady 回呼的訂閱／解除位置。
 - 尚待 CS2 server 實測：兩名玩家各自操作 MOTD／語言選單、啟動 `+map` 後進 Workshop collection、多次換圖、Scoreboard 更新，以及 UI 開啟中卸載時的輸入與 Entity 釋放。建置與替身測試不能證明這些原生行為已通過。
+
+
+## 2026-11-18 換圖修正（取代上述 MapReady 初始化安排）
+
+- beta.18 的 `OnMapLoad` 來自 LoopInitHook，可能早於舊地圖關閉。實測 log 中 MapReady 已在舊世界執行，因此 UI 不再訂閱 GameStateService.MapReady。
+- UIModule 訂閱 `OnStartupServer`，在下一次 WorldUpdate 建立 HUD。官方實作先完成引擎 StartupServer、準備 Entity System，再發出該事件。來源：https://github.com/swiftly-solution/swiftlys2/blob/v1.5.2-beta.18/src/engine/entities/entitysystem.cpp
+- 使用單一 generation 計數取消過期排程，MapUnload／Plugin.Unload 均使先前回呼失效，也涵蓋重載同名地圖。這是本次 crash 調查後加入的必要防護，取代原範圍中排除地圖世代機制的決定。
+- UI 操作在 Layout 為 null 或無效時返回，避免玩家連線與換圖交界繼續操作失效 HUD。
+- 僅在 Config.IsDebug 時以 LogInformation 記錄 UI startup scheduled、UI initialized、UI cleanup。其他模組的 MapReady 排程仍沿用原行為。
+- 建置通過，0 errors、13 個既有警告。SDK 邊界替身測試共 12 項通過，包含過期排程取消、同名地圖切換及插件卸載。原生 crash 是否排除仍需伺服器重現測試。
+
+### 本次伺服器測試
+
+1. 停止伺服器、部署本次 VSBot.dll，再以原本 +map／Workshop collection 參數完整啟動，設定 IsDebug=true。
+2. 玩家連線，確認 MOTD 自動出現；輸入 !motd 保持開啟，再 !map de_dust2。
+3. de_dust2 連線後確認 MOTD 自動出現且能關閉。輸入 !ss_lang，保持選單開啟，再 !map cs_office。
+4. cs_office 連線後確認 MOTD 自動出現、能關閉，語言選單能選擇且只顯示一次更新訊息。
+5. 再 !map cs_office 重載同名地圖，重複至少三次，交替保持 MOTD／語言選單開啟。確認沒有 crash、輸入鎖住或重複點擊，Scoreboard 正常。
+6. 檢查每張地圖有 UI startup scheduled，接著 UI initialized ... 3 HUDs，換圖有 UI cleanup。若仍發生異常，保留從啟動到異常的完整 log 與新 dump。

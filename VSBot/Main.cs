@@ -60,7 +60,6 @@ namespace VSBot
             var provider = _serviceProvider;
             if (provider is null) return;
 
-            provider.GetRequiredService<IGameStateService>().MapReady -= InitializeUIModule;
             provider.GetRequiredService<UIModule>().Unload();
 
             var logger = Core.Logger;

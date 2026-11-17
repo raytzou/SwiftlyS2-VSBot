@@ -71,11 +71,7 @@ namespace VSBot.UI
             if (playerId < 0 || playerId >= maxPlayers)
                 return;
 
-            if (_saysoundLanguageUI is null)
-            {
-                _logger.LogError("SaysoundLanguage is null.");
-                throw new InvalidOperationException("SaysoundLanguage is null. Is ModuleUI initialized?");
-            }
+            if (_saysoundLanguageUI is null || !_saysoundLanguageUI.IsValid) return;
 
             var player = _core.PlayerManager.GetPlayer(playerId);
 
@@ -128,11 +124,7 @@ namespace VSBot.UI
 
         void IClickableUIComponent.OnClicked(IOnCustomHudClickedEvent @event)
         {
-            if (_saysoundLanguageUI is null)
-            {
-                _logger.LogError("SaysoundLanguage is null.");
-                throw new InvalidOperationException("SaysoundLanguage is null. Is ModuleUI initialized?");
-            }
+            if (_saysoundLanguageUI is null || !_saysoundLanguageUI.IsValid) return;
 
             var player = _core.PlayerManager.GetPlayer(@event.PlayerId);
 
@@ -171,11 +163,7 @@ namespace VSBot.UI
 
         public void Close(int playerId)
         {
-            if (_saysoundLanguageUI is null)
-            {
-                _logger.LogError("SaysoundLanguage is null.");
-                throw new InvalidOperationException("SaysoundLanguage is null. Is ModuleUI initialized?");
-            }
+            if (_saysoundLanguageUI is null || !_saysoundLanguageUI.IsValid) return;
 
             _saysoundLanguageUI.SetInputCaptureEnabledForPlayer(playerId, false);
 

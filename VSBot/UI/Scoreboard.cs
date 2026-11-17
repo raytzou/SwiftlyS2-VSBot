@@ -53,11 +53,7 @@ namespace VSBot.UI
 
         public void Update(int botRemaining)
         {
-            if (_scoreboard is null)
-            {
-                _logger.LogError("Scoreboard is null.");
-                throw new InvalidOperationException("Scoreboard is null. Is ModuleUI initialized?");
-            }
+            if (_scoreboard is null || !_scoreboard.IsValid) return;
 
             foreach (var playerPair in _gameStateService.Players)
             {
