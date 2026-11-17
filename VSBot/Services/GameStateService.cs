@@ -46,6 +46,7 @@ namespace VSBot.Services
         public event Action? MapReady;
 
         private Dictionary<ulong, IPlayer> _players = [];
+        private int _mapGeneration;
         private bool _isWarmup = false;
         private bool _isBuyTime = false;
         private bool _isRoundEnd = false;
@@ -129,8 +130,18 @@ namespace VSBot.Services
 
         public void OnMapStart()
         {
-            _core.Scheduler.NextWorldUpdate(() => MapReady?.Invoke());
+            var generation = ++_mapGeneration;
             Initialize();
+            _core.Scheduler.NextWorldUpdate(() =>
+            {
+                if (generation != _mapGeneration) return;
+                MapReady?.Invoke();
+            });
+        }
+
+        public void OnMapUnload()
+        {
+            ++_mapGeneration;
         }
 
         public void CalculateStreak(byte winTeam)

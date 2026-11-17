@@ -29,6 +29,7 @@ namespace VSBot.Services.Interfaces
         public void OnRoundStart();
         public void OnRoundEnd();
         public void OnMapStart();
+        public void OnMapUnload();
         public void CalculateStreak(byte winTeam);
         public void SetCurrentBotLevel(int level);
         public void SetCurrentBotMaxRespawnTimes(int maxRespawnTimes);
