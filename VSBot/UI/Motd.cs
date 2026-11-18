@@ -33,16 +33,13 @@ namespace VSBot.UI
                 // Per-player capture overrides the global HUD state.
                 for (var playerId = 0; playerId < _core.PlayerManager.MaxPlayers; playerId++)
                 {
-                    try
-                    {
-                        if (layout.IsInputCaptureEnabledForPlayer(playerId))
-                            layout.SetInputCaptureEnabledForPlayer(playerId, false);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Failed to release HUD input for player {PlayerId}.", playerId);
-                    }
+                    if (layout.IsInputCaptureEnabledForPlayer(playerId))
+                        layout.SetInputCaptureEnabledForPlayer(playerId, false);
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to release HUD input during unload.");
             }
             finally
             {
