@@ -28,12 +28,12 @@ UIModule 將注入的三個 UI 組成固定清單，並使用 Layout.Address →
 | --- | --- | --- |
 | Register() | Main.Load，DI 完成後 | 訂閱唯一的 OnCustomHudClicked handler，以旗標避免重複訂閱。 |
 | Initialize() | 現有 MapReady 回呼 | 逐一建立 UI，完成後建立點擊字典。同一地圖已初始化則直接返回。 |
-| OnMapUnload() | Main.OnMapUnload | 先清空字典，再呼叫各 UI.Unload，重設初始化旗標。 |
+| OnMapUnload() | Main.OnMapUnload | 先重設初始化旗標、清空字典，再呼叫各 UI.Unload。 |
 | Unload() | Main.Unload | 解除全域事件訂閱，再執行地圖 UI 清理。重複呼叫安全。 |
 
 各 UI.Initialize 只建立自己的 HUD。各 UI.Unload 清空 Layout reference，對仍有效且由自己建立的 Entity 執行必要移除及輸入釋放。實作時以 SwiftlyS2 1.5.1 確認實際 Entity 移除 API 與有效性檢查，避免操作已被地圖銷毀的 Entity。
 
-採基本 try/finally 確保清理及旗標重設。初始化中途失敗則清理此次已建立的 UI 並記錄錯誤；清理個別 UI 失敗仍繼續清理其餘 UI。這部分以簡單迴圈處理。
+UIModule.Unload 直接解除框架事件訂閱後執行 OnMapUnload，不使用 try-finally。OnMapUnload 先設定 `_initialized = false`，再清空路由及逐一卸載元件；保留每個 component.Unload 的 try-catch，不再加外層 try-finally。初始化中途失敗則清理此次已建立的 UI 並記錄錯誤；清理個別 UI 失敗仍繼續清理其餘 UI。這部分以簡單迴圈處理。
 
 UI 清理在 Plugin.Unload 的 game thread 上、DB worker shutdown 與 provider.Dispose 之前完成。MapUnload 的 UI 清理安排在玩家快取儲存之前。
 
@@ -69,7 +69,7 @@ Main 對 InitializeUIModule 的 MapReady 訂閱先 -= 再 +=，回呼執行後�
 ## 實作與驗證結果（2026-11-17）
 
 - 已完成上述九個程式檔案的修改，未擴大至其他模組或 UI 業務邏輯。
-- 以 SwiftlyS2.CS2 1.5.1 套件對應原始碼 commit `821ccf1acd11e81423238ee17e8873e08ebe68f0` 核對 API：清理時先清空自身 Layout reference，僅對 `IsValid` 的 HUD 執行 `Despawn()`。互動 UI 先逐一釋放 per-player input capture，單一玩家釋放失敗會記錄並繼續，finally 仍嘗試移除 HUD。
+- 以 SwiftlyS2.CS2 1.5.1 套件對應原始碼 commit `821ccf1acd11e81423238ee17e8873e08ebe68f0` 核對 API：清理時先清空自身 Layout reference，僅對 `IsValid` 的 HUD 執行 `Despawn()`。互動 UI 先逐一釋放 per-player input capture，整個玩家迴圈使用一次 try-catch，釋放失敗時記錄一次並停止迴圈，finally 仍對有效 HUD 執行移除。
 - SDK 依據：[CEntityInstanceImpl](https://github.com/swiftly-solution/swiftlys2/blob/821ccf1acd11e81423238ee17e8873e08ebe68f0/managed/src/SwiftlyS2.Core/Modules/Schemas/Extensions/CEntityInstanceImpl.cs)、[CCSCustomHudLayoutImpl](https://github.com/swiftly-solution/swiftlys2/blob/821ccf1acd11e81423238ee17e8873e08ebe68f0/managed/src/SwiftlyS2.Core/Modules/Schemas/Extensions/CCSCustomHudLayoutImpl.cs)。全域 input capture 與 per-player 狀態分開，因此不只設定全域為 false。
 - `dotnet build VSBot.slnx --no-restore` 通過：0 errors，13 個既有 `Commands/Buy.cs` 舊選單 API 警告，與修改前相同。
 - Repository 外的獨立測試程式直接編譯本次 UIModule 與介面原始碼，以 SDK 邊界替身及假 UI 驗證以下九項：重複 Register、同圖重複 Initialize、依 Layout 分派且保留 PlayerId、清空路由及 Layout、換圖後重建且維持單一訂閱、個別清理失敗仍繼續、初始化失敗回復、失敗後可重新初始化、重複 Unload 並解除訂閱。全部通過；這不等同原生 HUD 整合測試。
@@ -94,3 +94,11 @@ Main 對 InitializeUIModule 的 MapReady 訂閱先 -= 再 +=，回呼執行後�
 4. cs_office 連線後確認 MOTD 自動出現、能關閉，語言選單能選擇且只顯示一次更新訊息。
 5. 再 !map cs_office 重載同名地圖，重複至少三次，交替保持 MOTD／語言選單開啟。確認沒有 crash、輸入鎖住或重複點擊，Scoreboard 正常。
 6. 檢查每張地圖有 UI startup scheduled，接著 UI initialized ... 3 HUDs，換圖有 UI cleanup。若仍發生異常，保留從啟動到異常的完整 log 與新 dump。
+
+
+## 2026-11-19 PR review 調整
+
+- 使用者已完成實機測試與 code review。依 review 簡化 UIModule 的卸載流程，不為框架事件解除訂閱增加防禦性 try-finally。
+- OnMapUnload 在清理前將 `_initialized` 設為 false，停止點擊路由；各元件仍有獨立 try-catch，讓其餘元件可繼續卸載。
+- Motd 與 SaysoundLanguage 改為整個輸入釋放迴圈共用 try-catch-finally；避免對相同執行緒錯誤逐一重試與重複紀錄，finally 負責移除有效 HUD。
+- 三項程式調整各自提交，文件另行提交。本輪編譯成功（0 errors、13 個既有舊選單 API 警告）；未新增原始 log 或除錯程式。
