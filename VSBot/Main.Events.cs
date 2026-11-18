@@ -53,7 +53,6 @@ namespace VSBot
 
             ResetDefaultWeapon();
             ResetMaxRounds();
-            gameState.MapReady += InitializeUIModule;
             gameState.MapReady += AddMoreSpawnPoints;
             gameState.MapReady += SetHumanTeam;
             gameState.ClearPlayers();
@@ -68,6 +67,8 @@ namespace VSBot
         private void OnMapUnload(IOnMapUnloadEvent @event)
         {
             CancelMapInitialization();
+            GetRequiredService<UIModule>().OnMapUnload();
+
             var playerDataService = GetRequiredService<IPlayerDataService>();
 
             playerDataService.SaveAllPlayerCachesToDB();
@@ -82,7 +83,6 @@ namespace VSBot
             var gameState = GetRequiredService<IGameStateService>();
             gameState.OnMapUnload();
             gameState.MapReady -= EnableCheats;
-            gameState.MapReady -= InitializeUIModule;
             gameState.MapReady -= AddMoreSpawnPoints;
             gameState.MapReady -= SetHumanTeam;
             GetRequiredService<BotModule>().ClearMapResources();
@@ -193,15 +193,5 @@ namespace VSBot
             }
         }
 
-        private void InitializeUIModule()
-        {
-            var gameState = GetRequiredService<IGameStateService>();
-
-            gameState.MapReady -= InitializeUIModule;
-
-            var UIModule = GetRequiredService<UIModule>();
-
-            UIModule.Initialize();
-        }
     }
 }

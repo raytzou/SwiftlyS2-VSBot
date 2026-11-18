@@ -1,13 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared;
-using SwiftlyS2.Shared.Events;
 using SwiftlyS2.Shared.SchemaDefinitions;
 using VSBot.Services.Interfaces;
 using VSBot.UI.Interfaces;
 
 namespace VSBot.UI
 {
-    public class Scoreboard : IScoreboard
+    public class Scoreboard : IScoreboard, IUIComponentLifecycle
     {
         private readonly ISwiftlyCore _core;
         private readonly ILogger<Scoreboard> _logger;
@@ -22,23 +21,29 @@ namespace VSBot.UI
 
         private CCSCustomHudLayout? _scoreboard;
 
+        CCSCustomHudLayout? IUIComponentLifecycle.Layout => _scoreboard;
+
+        void IUIComponentLifecycle.Unload()
+        {
+            var layout = _scoreboard;
+            _scoreboard = null;
+
+            if (layout is null || !layout.IsValid) return;
+
+            layout.Despawn();
+        }
+
         public void Close(int playerId)
         {
 
         }
 
-        public void Initialize()
+        void IUIComponentLifecycle.Initialize()
         {
             _scoreboard = _core.EntitySystem.CreateEntity<CCSCustomHudLayout>();
             _scoreboard.StrLayout = "panorama/layout/custom_game/scoreboard.xml";
             _scoreboard.StrLayoutUpdated();
             _scoreboard.DispatchSpawn();
-            _core.Event.OnCustomHudClicked += OnClicked;
-        }
-
-        public void OnClicked(IOnCustomHudClickedEvent @event)
-        {
-            return;
         }
 
         public void Open(int playerId)
@@ -48,11 +53,7 @@ namespace VSBot.UI
 
         public void Update(int botRemaining)
         {
-            if (_scoreboard is null)
-            {
-                _logger.LogError("Scoreboard is null.");
-                throw new InvalidOperationException("Scoreboard is null. Is ModuleUI initialized?");
-            }
+            if (_scoreboard is null || !_scoreboard.IsValid) return;
 
             foreach (var playerPair in _gameStateService.Players)
             {

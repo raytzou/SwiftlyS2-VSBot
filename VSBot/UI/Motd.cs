@@ -6,7 +6,7 @@ using VSBot.UI.Interfaces;
 
 namespace VSBot.UI
 {
-    public class Motd : IMotd
+    public class Motd : IMotd, IUIComponentLifecycle, IClickableUIComponent
     {
         private readonly ISwiftlyCore _core;
         private readonly ILogger<Motd> _logger;
@@ -19,13 +19,37 @@ namespace VSBot.UI
 
         private CCSCustomHudLayout? _motd;
 
+        CCSCustomHudLayout? IUIComponentLifecycle.Layout => _motd;
+
+        void IUIComponentLifecycle.Unload()
+        {
+            var layout = _motd;
+            _motd = null;
+
+            if (layout is null || !layout.IsValid) return;
+
+            try
+            {
+                // Per-player capture overrides the global HUD state.
+                for (var playerId = 0; playerId < _core.PlayerManager.MaxPlayers; playerId++)
+                {
+                    if (layout.IsInputCaptureEnabledForPlayer(playerId))
+                        layout.SetInputCaptureEnabledForPlayer(playerId, false);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to release HUD input during unload.");
+            }
+            finally
+            {
+                if (layout.IsValid) layout.Despawn();
+            }
+        }
+
         public void Close(int playerId)
         {
-            if (_motd == null)
-            {
-                _logger.LogError("Motd is null.");
-                throw new InvalidOperationException("Motd is null. Is ModuleUI initialized?");
-            }
+            if (_motd is null || !_motd.IsValid) return;
 
             _motd.SetHasClassForPlayer(
                 playerId,
@@ -40,22 +64,17 @@ namespace VSBot.UI
             );
         }
 
-        public void Initialize()
+        void IUIComponentLifecycle.Initialize()
         {
             _motd = _core.EntitySystem.CreateEntity<CCSCustomHudLayout>();
             _motd.StrLayout = "panorama/layout/custom_game/cs16_style_motd.xml";
             _motd.StrLayoutUpdated();
             _motd.DispatchSpawn();
-            _core.Event.OnCustomHudClicked += OnClicked;
         }
 
-        public void OnClicked(IOnCustomHudClickedEvent @event)
+        void IClickableUIComponent.OnClicked(IOnCustomHudClickedEvent @event)
         {
-            if (_motd == null)
-            {
-                _logger.LogError("Motd is null.");
-                throw new InvalidOperationException("Motd is null. Is ModuleUI initialized?");
-            }
+            if (_motd is null || !_motd.IsValid) return;
 
             var player = _core.PlayerManager.GetPlayer(@event.PlayerId);
 
@@ -73,11 +92,7 @@ namespace VSBot.UI
 
         public void Open(int playerId)
         {
-            if (_motd == null)
-            {
-                _logger.LogError("Motd is null.");
-                throw new InvalidOperationException("Motd is null. Is ModuleUI initialized?");
-            }
+            if (_motd is null || !_motd.IsValid) return;
 
             var player = _core.PlayerManager.GetPlayer(playerId);
 
