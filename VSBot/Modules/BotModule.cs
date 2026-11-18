@@ -19,6 +19,8 @@ namespace VSBot.Modules
         private readonly IOptionsMonitor<Config> _config;
         private readonly IScoreboard _scoreboard;
 
+        private int _mapGeneration;
+        private bool _mapActive;
         private int _level = 2;
         private int _maxRespawnTimes = 0;
         private int _respawnTimes = 0;
@@ -37,11 +39,32 @@ namespace VSBot.Modules
         {
             _logger.LogInformation("{moduleName} {methodName}", nameof(BotModule), nameof(OnMapStart));
 
+            ClearMapResources();
+            _mapActive = true;
             Initialize();
             DisableBotMovement();
             DisableRandomSpawn();
             _gameStateService.MapReady += RemoveKnife;
             _gameStateService.MapReady += AddSpecialBot;
+        }
+
+        public void ClearMapResources()
+        {
+            ++_mapGeneration;
+            _mapActive = false;
+            _gameStateService.MapReady -= RemoveKnife;
+            _gameStateService.MapReady -= AddSpecialBot;
+        }
+
+        // Use for map startup work and callbacks retaining map-specific teams or player objects.
+        private void NextMapWorldUpdate(Action action)
+        {
+            if (!_mapActive) return;
+            var generation = _mapGeneration;
+            _core.Scheduler.NextWorldUpdate(() =>
+            {
+                if (_mapActive && generation == _mapGeneration) action();
+            });
         }
 
         public void OnWarmupEnd()
@@ -175,15 +198,15 @@ namespace VSBot.Modules
             _respawnTimes--;
             _gameStateService.SetCurrentBotRespawnRemaining(_respawnTimes);
             _scoreboard.Update(_respawnTimes);
-            _core.Scheduler.NextWorldUpdate(() =>
+            NextMapWorldUpdate(() =>
             {
                 AllowBotPickupWeapon(player.Name);
             });
-            _core.Scheduler.NextWorldUpdate(() =>
+            NextMapWorldUpdate(() =>
             {
                 player.Respawn();
             });
-            _core.Scheduler.NextWorldUpdate(() =>
+            NextMapWorldUpdate(() =>
             {
                 PreventBotPickupWeapon(player.Name);
             });
@@ -193,7 +216,7 @@ namespace VSBot.Modules
         {
             _logger.LogInformation("{methodName}", nameof(DisableBotMovement));
 
-            _core.Scheduler.NextWorldUpdate(() =>
+            NextMapWorldUpdate(() =>
             {
                 _core.Engine.ExecuteCommand("sw_cvar bot_stop 1");
             });
@@ -211,7 +234,7 @@ namespace VSBot.Modules
             var botTeam = humanTeam == Team.CT ? Team.T : Team.CT;
 
             KickBot();
-            _core.Scheduler.NextWorldUpdate(() =>
+            NextMapWorldUpdate(() =>
             {
                 _core.Engine.ExecuteCommand($"bot_add_{botTeam} {nameof(BotProfile.Difficulty.expert)} {BotProfile.Special[0]}");
                 _core.Engine.ExecuteCommand($"bot_add_{botTeam} {nameof(BotProfile.Difficulty.expert)} {BotProfile.Special[1]}");
@@ -219,6 +242,7 @@ namespace VSBot.Modules
 
                 if (_config.CurrentValue.IsDebug)
                 {
+                    NextMapWorldUpdate(LogMapStartupState);
                     _logger.LogInformation("bot_add_{botTeam} {difficulty} {botName}", botTeam, nameof(BotProfile.Difficulty.expert), BotProfile.Special[0]);
                     _logger.LogInformation("bot_add_{botTeam} {difficulty} {botName}", botTeam, nameof(BotProfile.Difficulty.expert), BotProfile.Special[1]);
                     _logger.LogInformation("bot_add_{botTeam} {difficulty} {botName}", botTeam, nameof(BotProfile.Difficulty.expert), BotProfile.Special[2]);
@@ -226,10 +250,22 @@ namespace VSBot.Modules
             });
         }
 
+        private void LogMapStartupState()
+        {
+            if (!_config.CurrentValue.IsDebug) return;
+            var specialBotCount = _core.PlayerManager.GetBots().Count(bot => BotProfile.Special.Values.Contains(bot.Name));
+            _logger.LogInformation(
+                "Map startup state: map={Map}, humanTeam={HumanTeam}, mp_humanteam={HumanTeamCvar}, bot_stop={BotStop}, warmup={Warmup}, specialBots={SpecialBots}/3.",
+                _core.Engine.GlobalVars.MapName, _gameStateService.HumanTeam,
+                _core.ConVar.FindAsString("mp_humanteam")?.ValueAsString,
+                _core.ConVar.FindAsString("bot_stop")?.ValueAsString,
+                _gameStateService.IsWarmup, specialBotCount);
+        }
+
         private void KickBot()
         {
             _logger.LogInformation("{methodName}", nameof(KickBot));
-            _core.Scheduler.NextWorldUpdate(() =>
+            NextMapWorldUpdate(() =>
             {
                 _core.Engine.ExecuteCommand("bot_kick");
             });
@@ -279,7 +315,7 @@ namespace VSBot.Modules
             var humanTeam = _gameStateService.HumanTeam;
             var botTeam = humanTeam == Team.CT ? Team.T : Team.CT;
 
-            _core.Scheduler.NextWorldUpdate(() =>
+            NextMapWorldUpdate(() =>
             {
                 for (int i = 1; i <= _config.CurrentValue.BotQuota - BotProfile.Special.Count; i++)
                 {
@@ -489,7 +525,7 @@ namespace VSBot.Modules
                     return;
                 }
 
-                _core.Scheduler.NextWorldUpdate(() =>
+                NextMapWorldUpdate(() =>
                 {
                     bot.PlayerPawn.ArmorValue = amount;
                     bot.PlayerPawn.ArmorValueUpdated();
@@ -506,7 +542,7 @@ namespace VSBot.Modules
                     return;
                 }
 
-                _core.Scheduler.NextWorldUpdate(() =>
+                NextMapWorldUpdate(() =>
                 {
                     bot.PlayerPawn.ItemServices.HasHelmet = true;
                     bot.PlayerPawn.ItemServices.HasHelmetUpdated();
@@ -525,7 +561,7 @@ namespace VSBot.Modules
 
             var freezeTime = _core.ConVar.Find<int>("mp_freezetime")!.Value;
 
-            _core.Scheduler.DelayBySeconds(freezeTime, () =>
+            var timer = _core.Scheduler.DelayBySeconds(freezeTime, () =>
             {
                 var bot = _core.PlayerManager
                     .GetBots()
@@ -550,6 +586,8 @@ namespace VSBot.Modules
                     _logger.LogInformation("{methodName}: bot {botName} PreventWeaponPickup={PreventWeaponPickup}", nameof(PreventBotPickupWeapon), botName, bot.PlayerPawn.WeaponServices.PreventWeaponPickup);
                 }
             });
+            // Bot names are reused after a map change; do not apply this timer to a new bot.
+            _core.Scheduler.StopOnMapChange(timer);
         }
 
         private void AllowBotPickupWeapon(string botName)

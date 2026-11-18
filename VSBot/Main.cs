@@ -59,6 +59,8 @@ namespace VSBot
             var provider = _serviceProvider;
             if (provider is null) return;
 
+            CancelMapInitialization();
+
             var logger = Core.Logger;
             var worker = provider.GetRequiredService<IDatabaseWorker>();
 
@@ -152,6 +154,7 @@ namespace VSBot
         private void RegisterEvents()
         {
             Core.Event.OnMapLoad += OnMapLoad;
+            Core.Event.OnStartupServer += OnStartupServer;
             Core.Event.OnMapUnload += OnMapUnload;
             Core.Event.OnPrecacheResource += OnPrecacheResource;
         }
@@ -164,6 +167,7 @@ namespace VSBot
         private void UnregisterEvents()
         {
             Core.Event.OnMapLoad -= OnMapLoad;
+            Core.Event.OnStartupServer -= OnStartupServer;
             Core.Event.OnMapUnload -= OnMapUnload;
             Core.Event.OnPrecacheResource -= OnPrecacheResource;
         }

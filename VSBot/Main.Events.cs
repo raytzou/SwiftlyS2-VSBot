@@ -11,9 +11,34 @@ namespace VSBot
 {
     public partial class Main
     {
+        private int _mapGeneration;
+        private bool _mapStarted;
+        private bool _mapLoading;
+
         private void OnMapLoad(IOnMapLoadEvent @event)
         {
-            var mapName = @event.MapName;
+            CancelMapInitialization();
+            _mapLoading = true;
+            if (GetRequiredService<IOptionsMonitor<Config>>().CurrentValue.IsDebug)
+                Core.Logger.LogInformation("Map loading: {Map}, generation {Generation}.", @event.MapName, _mapGeneration);
+        }
+
+        private void OnStartupServer()
+        {
+            if (!_mapLoading || _mapStarted) return;
+            var generation = _mapGeneration;
+            // OnMapLoad can run in the old world. Wait for the new server's first world update.
+            Core.Scheduler.NextWorldUpdate(() =>
+            {
+                if (generation != _mapGeneration || !_mapLoading || _mapStarted) return;
+                _mapStarted = true;
+                InitializeMap();
+            });
+        }
+
+        private void InitializeMap()
+        {
+            var mapName = Core.Engine.GlobalVars.MapName;
             var gameState = GetRequiredService<IGameStateService>();
             var playerService = GetRequiredService<IPlayerService>();
             var config = GetRequiredService<IOptionsMonitor<Config>>();
@@ -42,10 +67,25 @@ namespace VSBot
 
         private void OnMapUnload(IOnMapUnloadEvent @event)
         {
+            CancelMapInitialization();
             var playerDataService = GetRequiredService<IPlayerDataService>();
 
             playerDataService.SaveAllPlayerCachesToDB();
             playerDataService.ClearPlayerCaches();
+        }
+
+        private void CancelMapInitialization()
+        {
+            ++_mapGeneration;
+            _mapStarted = false;
+            _mapLoading = false;
+            var gameState = GetRequiredService<IGameStateService>();
+            gameState.OnMapUnload();
+            gameState.MapReady -= EnableCheats;
+            gameState.MapReady -= InitializeUIModule;
+            gameState.MapReady -= AddMoreSpawnPoints;
+            gameState.MapReady -= SetHumanTeam;
+            GetRequiredService<BotModule>().ClearMapResources();
         }
 
         private void OnPrecacheResource(IOnPrecacheResourceEvent @event)
@@ -89,8 +129,10 @@ namespace VSBot
 
             DuplicateSpawnPoints<CInfoPlayerTerrorist>(TSpawnPoints, "T", "info_player_terrorist", spawnPointCount);
             DuplicateSpawnPoints<CInfoPlayerCounterterrorist>(CTSpawnPoints, "CT", "info_player_counterterrorist", spawnPointCount);
+            var generation = _mapGeneration;
             Core.Scheduler.NextWorldUpdate(() =>
             {
+                if (generation != _mapGeneration || !_mapStarted) return;
                 var TSpawnPointCount = Core.EntitySystem.GetAllEntitiesByDesignerName<SpawnPoint>("info_player_terrorist").Count();
                 var CTSpawnPointCount = Core.EntitySystem.GetAllEntitiesByDesignerName<SpawnPoint>("info_player_counterterrorist").Count();
 
