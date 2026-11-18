@@ -104,19 +104,14 @@ namespace VSBot.Modules
 
         public void Unload()
         {
-            try
+            if (_registered)
             {
-                if (_registered)
-                {
-                    _core.Event.OnCustomHudClicked -= OnClicked;
-                    _core.Event.OnStartupServer -= OnStartupServer;
-                    _registered = false;
-                }
+                _core.Event.OnCustomHudClicked -= OnClicked;
+                _core.Event.OnStartupServer -= OnStartupServer;
+                _registered = false;
             }
-            finally
-            {
-                OnMapUnload();
-            }
+
+            OnMapUnload();
         }
 
         private void OnClicked(IOnCustomHudClickedEvent @event)
