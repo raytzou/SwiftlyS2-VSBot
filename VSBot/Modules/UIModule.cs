@@ -81,24 +81,18 @@ namespace VSBot.Modules
             ++_mapGeneration;
             if (_config.CurrentValue.IsDebug)
                 _core.Logger.LogInformation("UI cleanup, generation {Generation}, initialized {Initialized}.", _mapGeneration, _initialized);
+            _initialized = false;
             _clickableComponents.Clear();
-            try
+            foreach (var component in _components)
             {
-                foreach (var component in _components)
+                try
                 {
-                    try
-                    {
-                        component.Unload();
-                    }
-                    catch (Exception ex)
-                    {
-                        _core.Logger.LogError(ex, "Failed to unload UI component {Component}.", component.GetType().Name);
-                    }
+                    component.Unload();
                 }
-            }
-            finally
-            {
-                _initialized = false;
+                catch (Exception ex)
+                {
+                    _core.Logger.LogError(ex, "Failed to unload UI component {Component}.", component.GetType().Name);
+                }
             }
         }
 
