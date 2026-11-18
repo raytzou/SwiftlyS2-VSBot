@@ -85,7 +85,7 @@ namespace VSBot
             gameState.MapReady -= InitializeUIModule;
             gameState.MapReady -= AddMoreSpawnPoints;
             gameState.MapReady -= SetHumanTeam;
-            GetRequiredService<BotModule>().OnMapUnload();
+            GetRequiredService<BotModule>().ClearMapResources();
         }
 
         private void OnPrecacheResource(IOnPrecacheResourceEvent @event)

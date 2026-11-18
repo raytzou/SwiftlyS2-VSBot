@@ -56,7 +56,7 @@
 - 使用 `_core.Scheduler.DelayBySeconds(freezeTime, ...)`。
 - 將回傳的計時器交給 `_core.Scheduler.StopOnMapChange(timer)`。
 
-Bot 已出現只代表排程當下有 Bot，並不代表等待期間不會換圖。`DelayBySeconds` 預設不因換圖取消，而回呼以 Bot 名稱重新查找對象；新地圖會重用特殊 Bot 名稱及一般 Bot 命名，因此仍需要取消舊計時器，避免套用到新地圖的同名 Bot。
+`DelayBySeconds` 預設不因換圖取消，因此直接使用 SwiftlyS2 提供的 `StopOnMapChange` 管理計時器生命週期，取代自訂世代包裝，讓處理方式簡單清楚。目前沒有直接證據證明本次異常由舊世代 timer 殘留造成；這項調整是使用框架既有的換圖取消機制，不應描述為已證實的 timer 殘留修復。
 
 ### Random spawn 行為
 
@@ -104,4 +104,14 @@ Log 中仍有 `Giving up attempts to make more random spawn points` 訊息（04:
 4. 確認遊玩中的一般 Bot 重生與撿武器限制仍正常，避免只驗證回合開局。
 5. 在 freeze time 的延遲工作尚未結束前換圖，確認舊計時器不影響新地圖 Bot。
 
-第 5 項是後續回歸檢查建議；目前使用者回報及本次 log 不足以單獨證明已實測此取消情境。
+使用者後續已多次實測 freeze time 期間換圖，回報流程正常；這確認測試情境未出現異常，但不能反推舊版曾有 timer 殘留。
+
+
+## PR review 後的整理與後續實測
+
+- `BotModule.OnMapUnload()` 改名為 `ClearMapResources()`，同時更新 `OnMapStart` 及 `Main.CancelMapInitialization` 的呼叫點。方法負責使舊地圖排程失效、清除地圖有效狀態並解除一次性 `MapReady` 訂閱；名稱描述清理工作，且適用於換圖、重新初始化與插件卸載等呼叫時機。
+- 保留原生 `DelayBySeconds` 搭配 `StopOnMapChange`；目前沒有直接證據指出舊世代 timer 殘留曾造成問題。
+- 後續 `2026-11-18_17-45-10.log` 的 Bot 建立異常有 `Team is stacked` 訊息；本機檢查發現官方 `gamemode_casual.cfg` 被更新為預設內容。還原正確 cfg 後，使用者以未包含 `feb5ef5` 的版本再次測試，運作正常。`feb5ef5` 曾加入插件強制設定四項固定 ConVar，已依使用者決定從分支歷史移除；固定玩法設定交由 cfg 統一管理。
+- `2026-11-18_19-36-19.log` 記錄四次地圖初始化均為 `specialBots=3/3`，任務方、`bot_stop=1` 與 warmup 正確，共八次正式回合開始，未發現 `Team is stacked`。
+- 使用者多次測試 freeze time 換圖均無異常。該 log 中 19:38:08 開局後於 19:38:11 換圖、19:40:09 開局後於 19:40:11 換圖，後續初始化皆正常。
+- 原始 log、dump 與工作區外的除錯／驗證程式不納入專案提交。以上是使用者實測回報與 log 核對結果，不是對未記錄之 timer 狀態的直接觀測。

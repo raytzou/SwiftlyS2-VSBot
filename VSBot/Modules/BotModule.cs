@@ -39,7 +39,7 @@ namespace VSBot.Modules
         {
             _logger.LogInformation("{moduleName} {methodName}", nameof(BotModule), nameof(OnMapStart));
 
-            OnMapUnload();
+            ClearMapResources();
             _mapActive = true;
             Initialize();
             DisableBotMovement();
@@ -48,7 +48,7 @@ namespace VSBot.Modules
             _gameStateService.MapReady += AddSpecialBot;
         }
 
-        public void OnMapUnload()
+        public void ClearMapResources()
         {
             ++_mapGeneration;
             _mapActive = false;
