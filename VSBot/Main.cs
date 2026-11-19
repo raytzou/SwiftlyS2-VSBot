@@ -18,7 +18,7 @@ using VSBot.UI.Interfaces;
 
 namespace VSBot
 {
-    [PluginMetadata(Author = "cynicat", Name = "VSBot Plugin", Id = "vsbot", Version = "26.11.30")]
+    [PluginMetadata(Author = PluginInfo.Author, Name = PluginInfo.Name, Id = PluginInfo.Id, Version = PluginInfo.Version)]
     public partial class Main : BasePlugin
     {
         public static ISwiftlyCore SwiftlyCore => _serviceProvider?.GetRequiredService<ISwiftlyCore>()

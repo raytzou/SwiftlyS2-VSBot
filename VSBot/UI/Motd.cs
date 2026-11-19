@@ -2,6 +2,7 @@
 using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.Events;
 using SwiftlyS2.Shared.SchemaDefinitions;
+using VSBot.Classes;
 using VSBot.UI.Interfaces;
 
 namespace VSBot.UI
@@ -117,11 +118,13 @@ namespace VSBot.UI
                 link1Msg
             );
 
-            _motd.SetDialogVariableStringForPlayer(
+            var pluginVersion = PluginInfo.Version;
+
+            _motd.SetDialogVariableStringForPlayer( // leave it for Plugin Version
                 playerId,
                 "motd_link2",
                 "link2",
-                link2Msg
+                $"v{pluginVersion}"
             );
 
             _motd.SetHasClassForPlayer(
