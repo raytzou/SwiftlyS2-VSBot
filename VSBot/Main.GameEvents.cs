@@ -83,6 +83,22 @@ namespace VSBot
         }
 
         [GameEventHandler(HookMode.Post)]
+        public HookResult PlayerTeamHandler(EventPlayerTeam @event)
+        {
+            var player = @event.UserIdPlayer;
+            if (player is null || !player.IsValid) return HookResult.Continue;
+
+            if (!player.IsFakeClient)
+            {
+                var musicService = GetRequiredService<IMusicService>();
+
+                musicService.PlayAfterJoinTeam(player.PlayerID);
+            }
+
+            return HookResult.Continue;
+        }
+
+        [GameEventHandler(HookMode.Post)]
         public HookResult RoundAnnounceWarmupHandler(EventRoundAnnounceWarmup @event)
         {
             var gameState = GetRequiredService<IGameStateService>();
