@@ -21,6 +21,7 @@ namespace VSBot.Modules
         private readonly IMotd _motd;
         private readonly ISaysoundVolume _saysoundVolume;
         private readonly ISaysoundLanguage _saysoundLanguage;
+        private readonly IVolume _volume;
 
         public CommandModule(ISwiftlyCore core, ILogger<CommandModule> logger
             , IInfo info
@@ -35,6 +36,7 @@ namespace VSBot.Modules
             , IMotd motd
             , ISaysoundVolume saysoundVolume
             , ISaysoundLanguage saysoundLanguage
+            , IVolume volume
             )
         {
             _core = core;
@@ -51,6 +53,7 @@ namespace VSBot.Modules
             _motd = motd;
             _saysoundVolume = saysoundVolume;
             _saysoundLanguage = saysoundLanguage;
+            _volume = volume;
         }
 
         public void Initialize()
@@ -131,6 +134,13 @@ namespace VSBot.Modules
         public void OnSaysoundLanguageCommand(ICommandContext context)
         {
             _saysoundLanguage.ExecuteCommand(context);
+        }
+
+        [Command(name: "volume", helpText: "Adjusts music volume")]
+        [CommandAlias("vol")]
+        public void OnVolumeCommand(ICommandContext context)
+        {
+            _volume.ExecuteCommand(context);
         }
 
         /// <summary>
