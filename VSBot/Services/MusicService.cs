@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SwiftlyS2.Shared;
+using SwiftlyS2.Shared.Players;
 using SwiftlyS2.Shared.ProtobufDefinitions;
 using SwiftlyS2.Shared.Sounds;
 using System.Text.Json;
@@ -15,20 +16,23 @@ namespace VSBot.Services
         private readonly IOptionsMonitor<Config> _config;
         private readonly ILogger<MusicService> _logger;
         private readonly IGameStateService _gameStateService;
+        private readonly IPlayerDataService _playerDataService;
 
-        public MusicService(ISwiftlyCore core, IOptionsMonitor<Config> config, ILogger<MusicService> logger, IGameStateService gameStateService)
+        public MusicService(ISwiftlyCore core, IOptionsMonitor<Config> config, ILogger<MusicService> logger, IGameStateService gameStateService, IPlayerDataService playerDataService)
         {
             _core = core;
             _config = config;
             _logger = logger;
             _gameStateService = gameStateService;
+            _playerDataService = playerDataService;
         }
 
         public string CurrentRoundMusicName => _roundMusic?.DisplayName ?? string.Empty;
 
+        private const float DefaultVolume = 5f;
+
         private Music? _musicList;
         private SoundEventInfo? _roundMusic;
-        private uint _currentMusic;
         private CancellationTokenSource? _roundPlaybackTimer;
         private readonly Dictionary<int, CancellationTokenSource> _joinPlaybackTimers = new();
         private List<(uint emitId, int playerId)> _currentMusics = new();
@@ -118,7 +122,7 @@ namespace VSBot.Services
                 var currentPlayer = _core.PlayerManager.GetPlayer(playerId);
                 if (currentPlayer is null || !currentPlayer.IsValid || currentPlayer.IsFakeClient
                     || currentPlayer.SteamID != steamId || _gameStateService.IsRoundEnd) return;
-                PlaySound(eventName, playerId);
+                PlaySound(eventName, currentPlayer);
             });
             _joinPlaybackTimers[playerId] = timer;
             _core.Scheduler.StopOnMapChange(timer);
@@ -213,27 +217,25 @@ namespace VSBot.Services
         public void StopCurrentMusic()
         {
             CancelPendingPlayback();
-            SendStopSoundMessageToAll(_currentMusic);
 
             foreach (var music in _currentMusics)
             {
                 SendStopSoundMessage(music.emitId, music.playerId);
             }
 
-            _currentMusic = default;
             _currentMusics.Clear();
         }
 
         public void Reset()
         {
             CancelPendingPlayback();
-            _currentMusic = default;
             _currentMusics.Clear();
         }
 
-        private void PlaySound(string eventName, int playerId)
+        private void PlaySound(string eventName, IPlayer player)
         {
-            const float volume = 5f;
+            var playerCache = _playerDataService.GetPlayerCache(player.SteamID);
+            float volume = playerCache?.Volume == null ? DefaultVolume : playerCache.Volume / 20f;
 
             using var soundEvent = new SoundEvent()
             {
@@ -241,22 +243,23 @@ namespace VSBot.Services
                 Volume = volume,
             };
 
-            soundEvent.Recipients.AddRecipient(playerId);
-            _currentMusics.Add((soundEvent.Emit(), playerId));
+            soundEvent.Recipients.AddRecipient(player.PlayerID);
+            _currentMusics.Add((soundEvent.Emit(), player.PlayerID));
         }
 
         private void PlaySoundToAll(string eventName)
         {
-            const float volume = 5f;
+            var players = _gameStateService.Players;
 
-            using var soundEvent = new SoundEvent()
+            foreach (var playerPair in players)
             {
-                Name = eventName,
-                Volume = volume,
-            };
+                var player = playerPair.Value;
 
-            soundEvent.Recipients.AddAllPlayers();
-            _currentMusic = soundEvent.Emit();
+                if (player is not { IsValid: true })
+                    continue;
+
+                PlaySound(eventName, player);
+            }
         }
 
         private void SendStopSoundMessage(uint emitId, int playerId)
@@ -265,15 +268,6 @@ namespace VSBot.Services
             {
                 msg.SoundeventGuid = unchecked((int)emitId);
                 msg.Recipients.AddRecipient(playerId);
-            });
-        }
-
-        private void SendStopSoundMessageToAll(uint emitId)
-        {
-            _core.NetMessage.Send<CMsgSosStopSoundEvent>(msg =>
-            {
-                msg.SoundeventGuid = unchecked((int)emitId);
-                msg.Recipients.AddAllPlayers();
             });
         }
     }
