@@ -24,10 +24,10 @@ namespace VSBot.Services
             _gameStateService = gameStateService;
         }
 
-        public string CurrentRoundMusicName => _roundMusicName;
+        public string CurrentRoundMusicName => _roundMusic?.DisplayName ?? string.Empty;
 
         private Music? _musicList;
-        private string _roundMusicName = string.Empty;
+        private SoundEventInfo? _roundMusic;
         private uint _currentMusic;
         private List<(uint emitId, int playerId)> _currentMusics = new();
 
@@ -92,17 +92,8 @@ namespace VSBot.Services
             }
             else if (currentRound < maxRounds)
             {
-                var roundMusic = _musicList.Round;
-                var targetMusic = new SoundEventInfo();
-
-                foreach (var music in roundMusic)
-                {
-                    if (music.DisplayName == _roundMusicName)
-                    {
-                        targetMusic = music;
-                        break;
-                    }
-                }
+                var targetMusic = _roundMusic;
+                if (targetMusic is null) return;
 
                 var timer = _core.Scheduler.DelayBySeconds(delayPlay, () =>
                 {
@@ -135,7 +126,7 @@ namespace VSBot.Services
             var roundMusic = _musicList.Round;
             var random = Random.Shared.Next(roundMusic.Count);
 
-            _roundMusicName = roundMusic[random].DisplayName;
+            _roundMusic = roundMusic[random];
 
             var freezeTime = _core.ConVar.Find<int>("mp_freezetime")!.Value;
 
@@ -201,7 +192,7 @@ namespace VSBot.Services
 
         public void Reset()
         {
-            _roundMusicName = string.Empty;
+            _roundMusic = null;
             _currentMusic = default;
             _currentMusics.Clear();
         }
