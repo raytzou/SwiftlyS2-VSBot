@@ -175,6 +175,13 @@ namespace VSBot.Services
             _currentMusics.Clear();
         }
 
+        public void Reset()
+        {
+            _roundMusicName = string.Empty;
+            _currentMusic = default;
+            _currentMusics.Clear();
+        }
+
         private void PlaySound(string eventName, int playerId)
         {
             const float volume = 5f;

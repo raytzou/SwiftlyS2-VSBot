@@ -70,9 +70,11 @@ namespace VSBot
             GetRequiredService<UIModule>().OnMapUnload();
 
             var playerDataService = GetRequiredService<IPlayerDataService>();
+            var musicService = GetRequiredService<IMusicService>();
 
             playerDataService.SaveAllPlayerCachesToDB();
             playerDataService.ClearPlayerCaches();
+            musicService.Reset();
         }
 
         private void CancelMapInitialization()

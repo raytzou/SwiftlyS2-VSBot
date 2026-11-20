@@ -11,5 +11,6 @@
         void PlayOnRoundWin();
         void PlayOnRoundLoose();
         void StopCurrentMusic();
+        void Reset();
     }
 }
