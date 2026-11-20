@@ -53,7 +53,9 @@ namespace VSBot
         public HookResult PlayerDisconnectHandler(EventPlayerDisconnect @event)
         {
             var player = @event.UserIdPlayer;
-            if (player is null || !player.IsValid) return HookResult.Continue;
+            if (player is null) return HookResult.Continue;
+            GetRequiredService<BotModule>().ClearPlayerResources(player.SessionId);
+            if (!player.IsValid) return HookResult.Continue;
 
             if (!player.IsFakeClient)
             {

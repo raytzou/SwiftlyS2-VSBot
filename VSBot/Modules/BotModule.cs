@@ -22,6 +22,8 @@ namespace VSBot.Modules
         private int _mapGeneration;
         private bool _mapActive;
         private CancellationTokenSource? _randomSpawnTimer;
+        private CancellationTokenSource? _roundWork;
+        private readonly Dictionary<ulong, CancellationTokenSource> _pickupTimers = new();
         private int _level = 2;
         private int _maxRespawnTimes = 0;
         private int _respawnTimes = 0;
@@ -51,11 +53,26 @@ namespace VSBot.Modules
 
         public void ClearMapResources()
         {
-            CancelRandomSpawnTimer();
+            ClearRoundResources();
             ++_mapGeneration;
             _mapActive = false;
             _gameStateService.MapReady -= RemoveKnife;
             _gameStateService.MapReady -= AddSpecialBot;
+        }
+
+        private void ClearRoundResources()
+        {
+            CancelRandomSpawnTimer();
+            _roundWork?.Cancel();
+            _roundWork?.Dispose();
+            _roundWork = null;
+            foreach (var timer in _pickupTimers.Values) timer.Cancel();
+            _pickupTimers.Clear();
+        }
+
+        public void ClearPlayerResources(ulong sessionId)
+        {
+            if (_pickupTimers.Remove(sessionId, out var timer)) timer.Cancel();
         }
 
         // Use for map startup work and callbacks retaining map-specific teams or player objects.
@@ -89,6 +106,8 @@ namespace VSBot.Modules
         {
             _logger.LogInformation("{moduleName} {methodName}", nameof(BotModule), nameof(OnRoundStart));
 
+            ClearRoundResources();
+            _roundWork = new CancellationTokenSource();
             DisableRandomSpawn();
             AllowAllBotsPickupWeapon();
             SetAllBotMoneyToZero();
@@ -173,6 +192,7 @@ namespace VSBot.Modules
 
         public void OnRoundEnd()
         {
+            ClearRoundResources();
             DisableRandomSpawn();
             SetMaxRespawnTimes();
             SetDifficulty(_gameStateService.WinStreak, _gameStateService.LooseStreak);
@@ -187,6 +207,10 @@ namespace VSBot.Modules
 
         public void RespawnBot(IPlayer player)
         {
+            ClearPlayerResources(player.SessionId);
+            if (!player.IsValid || _roundWork is null) return;
+            var roundToken = _roundWork.Token;
+            var sessionId = player.SessionId;
             if (_gameStateService.IsRoundEnd)
                 return;
 
@@ -203,15 +227,12 @@ namespace VSBot.Modules
             _scoreboard.Update(_respawnTimes);
             NextMapWorldUpdate(() =>
             {
-                AllowBotPickupWeapon(player.Name);
-            });
-            NextMapWorldUpdate(() =>
-            {
-                player.Respawn();
-            });
-            NextMapWorldUpdate(() =>
-            {
-                PreventBotPickupWeapon(player.Name);
+                if (roundToken.IsCancellationRequested || _gameStateService.IsRoundEnd) return;
+                var currentPlayer = _core.PlayerManager.GetPlayerFromSessionId(sessionId);
+                if (currentPlayer is null || !currentPlayer.IsValid || !currentPlayer.IsFakeClient) return;
+                AllowBotPickupWeapon(currentPlayer.Name);
+                currentPlayer.Respawn();
+                PreventBotPickupWeapon(currentPlayer.Name);
             });
         }
 
@@ -562,19 +583,23 @@ namespace VSBot.Modules
         {
             _logger.LogInformation("{methodName}: bot {botName}", nameof(PreventBotPickupWeapon), botName);
 
+            if (_roundWork is null || _gameStateService.IsRoundEnd) return;
+            var roundToken = _roundWork.Token;
+            var player = _core.PlayerManager.GetBots().FirstOrDefault(bot => bot.Name == botName);
+            if (player is null || !player.IsValid || player.PlayerPawn is not { IsValid: true }) return;
+            var sessionId = player.SessionId;
+            var pawnHandle = player.Controller.PlayerPawn;
+            ClearPlayerResources(sessionId);
             var freezeTime = _core.ConVar.Find<int>("mp_freezetime")!.Value;
 
             var timer = _core.Scheduler.DelayBySeconds(freezeTime, () =>
             {
-                var bot = _core.PlayerManager
-                    .GetBots()
-                    .FirstOrDefault(f => f.Name == botName);
-
-                if (bot is null || !bot.IsValid || bot.PlayerPawn is null)
-                {
-                    _logger.LogWarning("{methodName}: bot {botName} is null or invalid", nameof(PreventBotPickupWeapon), botName);
-                    return;
-                }
+                _pickupTimers.Remove(sessionId);
+                if (roundToken.IsCancellationRequested || _gameStateService.IsRoundEnd) return;
+                var bot = _core.PlayerManager.GetPlayerFromSessionId(sessionId);
+                if (bot is null || !bot.IsValid || !bot.IsFakeClient
+                    || bot.PlayerPawn is not { IsValid: true }
+                    || !bot.Controller.PlayerPawn.Equals(pawnHandle)) return;
 
                 if (bot.PlayerPawn.WeaponServices is null)
                 {
@@ -589,24 +614,24 @@ namespace VSBot.Modules
                     _logger.LogInformation("{methodName}: bot {botName} PreventWeaponPickup={PreventWeaponPickup}", nameof(PreventBotPickupWeapon), botName, bot.PlayerPawn.WeaponServices.PreventWeaponPickup);
                 }
             });
-            // Bot names are reused after a map change; do not apply this timer to a new bot.
+            _pickupTimers[sessionId] = timer;
+            // Keep native map cancellation in addition to round/player cleanup.
             _core.Scheduler.StopOnMapChange(timer);
         }
 
         private void AllowBotPickupWeapon(string botName)
         {
             _logger.LogInformation("{methodName}: bot {botName}", nameof(AllowBotPickupWeapon), botName);
+            var player = _core.PlayerManager.GetBots().FirstOrDefault(bot => bot.Name == botName);
+            if (player is null || !player.IsValid || _roundWork is null) return;
+            var sessionId = player.SessionId;
+            var roundToken = _roundWork.Token;
+            ClearPlayerResources(sessionId);
             _core.Scheduler.NextWorldUpdate(() =>
             {
-                var bot = _core.PlayerManager
-                    .GetBots()
-                    .FirstOrDefault(f => f.Name == botName);
-
-                if (bot is null || !bot.IsValid || bot.PlayerPawn is null)
-                {
-                    _logger.LogWarning("{methodName}: bot {botName} is null or invalid", nameof(AllowBotPickupWeapon), botName);
-                    return;
-                }
+                if (roundToken.IsCancellationRequested || _gameStateService.IsRoundEnd) return;
+                var bot = _core.PlayerManager.GetPlayerFromSessionId(sessionId);
+                if (bot is null || !bot.IsValid || !bot.IsFakeClient || bot.PlayerPawn is not { IsValid: true }) return;
 
                 if (bot.PlayerPawn.WeaponServices is null)
                 {
