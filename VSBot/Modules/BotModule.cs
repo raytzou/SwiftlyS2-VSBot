@@ -21,6 +21,7 @@ namespace VSBot.Modules
 
         private int _mapGeneration;
         private bool _mapActive;
+        private CancellationTokenSource? _randomSpawnTimer;
         private int _level = 2;
         private int _maxRespawnTimes = 0;
         private int _respawnTimes = 0;
@@ -50,6 +51,7 @@ namespace VSBot.Modules
 
         public void ClearMapResources()
         {
+            CancelRandomSpawnTimer();
             ++_mapGeneration;
             _mapActive = false;
             _gameStateService.MapReady -= RemoveKnife;
@@ -87,6 +89,7 @@ namespace VSBot.Modules
         {
             _logger.LogInformation("{moduleName} {methodName}", nameof(BotModule), nameof(OnRoundStart));
 
+            DisableRandomSpawn();
             AllowAllBotsPickupWeapon();
             SetAllBotMoneyToZero();
             SetSpecialBotAttribute();
@@ -170,8 +173,8 @@ namespace VSBot.Modules
 
         public void OnRoundEnd()
         {
-            SetMaxRespawnTimes();
             DisableRandomSpawn();
+            SetMaxRespawnTimes();
             SetDifficulty(_gameStateService.WinStreak, _gameStateService.LooseStreak);
 
             if (_gameStateService.CurrentRound > 0)
@@ -665,17 +668,26 @@ namespace VSBot.Modules
 
         private void EnableRandomSpawn()
         {
+            CancelRandomSpawnTimer();
             var buyTime = _core.ConVar.Find<float>("mp_buytime")!.Value;
-            var timer = _core.Scheduler.DelayBySeconds(buyTime, () =>
+            _randomSpawnTimer = _core.Scheduler.DelayBySeconds(buyTime, () =>
             {
+                _randomSpawnTimer = null;
                 _core.Engine.ExecuteCommand("mp_randomspawn 1");
             });
 
-            _core.Scheduler.StopOnMapChange(timer);
+            _core.Scheduler.StopOnMapChange(_randomSpawnTimer);
+        }
+
+        private void CancelRandomSpawnTimer()
+        {
+            _randomSpawnTimer?.Cancel();
+            _randomSpawnTimer = null;
         }
 
         private void DisableRandomSpawn()
         {
+            CancelRandomSpawnTimer();
             _core.Engine.ExecuteCommand("mp_randomspawn 0");
         }
 
