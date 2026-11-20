@@ -30,7 +30,7 @@
 
 每次開局建立一個本模組持有的回合取消 token。結束或清理時取消，讓已排入 world update 的重生工作失效，包括同圖重開而回合數相同的情況。`RespawnBot` 在回呼內再次確認 session 與玩家有效性，避免離線後操作原玩家，也避免回合已結束後重新排入 timer。
 
-玩家離線清理放在 `!IsFakeClient` 判斷之外，因此 Bot 被踢除也會取消；事件仍有玩家物件但已無效時，也先按 session 清理。此分支同時將 Disconnect 的 `UnhookPost` 改為 `UnhookPre`，與註冊模式配對。這與 music 分支的同一項修正一致。
+玩家離線時，僅在 `IsFakeClient` 為 true 才呼叫 `BotModule.ClearBotResources`；真人玩家不需要這項 Bot timer 清理。Bot 被踢除也會取消；事件仍有 Bot 物件但已無效時，也先按 session 清理。此分支同時將 Disconnect 的 `UnhookPost` 改為 `UnhookPre`，與註冊模式配對。這與 music 分支的同一項修正一致。
 
 `FillNormalBot` 仍可在回合結束後補下一回合 Bot。沒有增加 OnTick、通用 timer 管理器、固定額外延遲或固定 ConVar 強制設定。
 
@@ -53,3 +53,10 @@
 6. **換圖／卸載**：在 freeze time 或 buyTime timer 尚待執行時換圖、重載同名地圖；另測插件卸載／重載後換圖。確認 warmup 特殊 Bot、開場出生與輸入控制正常，沒有舊回呼在新世界執行。
 
 若異常，提供完整 log、實際操作時間、buyTime／freezeTime、在哪一回合及哪個出生階段發生；本次未新增高頻除錯輸出。
+
+
+## 實測與命名 review 更新
+
+- 使用者已完成 server 測試與 code review：快速 `!slay` 未再觸發異常 random spawn，多數回合 Bot 武器撿取正確。這是使用者實測回報，並非宣稱所有邊界情境均已驗證。
+- `ClearPlayerResources` 改名為 `ClearBotResources`，明確表達 BotModule 的清理對象，更新內部所有呼叫點。
+- `PlayerDisconnectHandler` 僅對 `IsFakeClient` 呼叫 Bot 清理；真人 session 不再傳入。此方法只取消該 Bot 待執行的撿武器 timer。

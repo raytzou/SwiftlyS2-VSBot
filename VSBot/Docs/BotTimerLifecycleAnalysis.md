@@ -48,7 +48,7 @@ log 沒有記錄每次 timer 到期、ConVar 寫入或出生座標，因此以�
 - 使用玩家欄位定位清理，回呼再確認是原 Bot／原 pawn；不要以名稱或 Bot SteamID 作為唯一身分。實作時使用 SDK 可取得的連線或 entity handle／serial 比對，避免單憑 slot 判斷。
 - Bot 重生、開始允許撿武器時，先取消上一個生命的撿武器 timer，避免等待中的舊工作提前禁止撿武器。
 - 回合結束先取消全部撿武器 timers，再踢除／補 Bot。這不影響正常下一回合的 freezeTime 延遲。
-- Bot 離線／被踢除時取消其 timer。現有 `PlayerDisconnectHandler` 的業務清理在 `!IsFakeClient` 內，Bot 清理入口必須放在此條件之外；即使沒有有效 pawn 也應能按 slot 清理。
+- Bot 離線／被踢除時取消其 timer。現有 `PlayerDisconnectHandler` 的業務清理在 `!IsFakeClient` 內，Bot 清理入口應另以 `IsFakeClient` 判斷，只對 Bot 呼叫 `ClearBotResources`；即使沒有有效 pawn 也應能依 session 清理。
 - 保留 `StopOnMapChange`，不增加輪詢、不用每次 tick 清字典。
 
 ### 3. 防止清完後又新增舊工作

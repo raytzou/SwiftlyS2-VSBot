@@ -70,7 +70,7 @@ namespace VSBot.Modules
             _pickupTimers.Clear();
         }
 
-        public void ClearPlayerResources(ulong sessionId)
+        public void ClearBotResources(ulong sessionId)
         {
             if (_pickupTimers.Remove(sessionId, out var timer)) timer.Cancel();
         }
@@ -207,7 +207,7 @@ namespace VSBot.Modules
 
         public void RespawnBot(IPlayer player)
         {
-            ClearPlayerResources(player.SessionId);
+            ClearBotResources(player.SessionId);
             if (!player.IsValid || _roundWork is null) return;
             var roundToken = _roundWork.Token;
             var sessionId = player.SessionId;
@@ -589,7 +589,7 @@ namespace VSBot.Modules
             if (player is null || !player.IsValid || player.PlayerPawn is not { IsValid: true }) return;
             var sessionId = player.SessionId;
             var pawnHandle = player.Controller.PlayerPawn;
-            ClearPlayerResources(sessionId);
+            ClearBotResources(sessionId);
             var freezeTime = _core.ConVar.Find<int>("mp_freezetime")!.Value;
 
             var timer = _core.Scheduler.DelayBySeconds(freezeTime, () =>
@@ -626,7 +626,7 @@ namespace VSBot.Modules
             if (player is null || !player.IsValid || _roundWork is null) return;
             var sessionId = player.SessionId;
             var roundToken = _roundWork.Token;
-            ClearPlayerResources(sessionId);
+            ClearBotResources(sessionId);
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 if (roundToken.IsCancellationRequested || _gameStateService.IsRoundEnd) return;

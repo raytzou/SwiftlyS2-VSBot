@@ -54,7 +54,8 @@ namespace VSBot
         {
             var player = @event.UserIdPlayer;
             if (player is null) return HookResult.Continue;
-            GetRequiredService<BotModule>().ClearPlayerResources(player.SessionId);
+            if (player.IsFakeClient)
+                GetRequiredService<BotModule>().ClearBotResources(player.SessionId);
             if (!player.IsValid) return HookResult.Continue;
 
             if (!player.IsFakeClient)
