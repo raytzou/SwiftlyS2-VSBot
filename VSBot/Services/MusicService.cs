@@ -146,7 +146,7 @@ namespace VSBot.Services
         {
             const float volume = 10f;
 
-            var soundEvent = new SoundEvent()
+            using var soundEvent = new SoundEvent()
             {
                 Name = eventName,
                 Volume = volume,
@@ -160,7 +160,7 @@ namespace VSBot.Services
         {
             const float volume = 10f;
 
-            var soundEvent = new SoundEvent()
+            using var soundEvent = new SoundEvent()
             {
                 Name = eventName,
                 Volume = volume,
