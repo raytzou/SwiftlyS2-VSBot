@@ -10,5 +10,6 @@
         void PlayOnGameOver();
         void PlayOnRoundWin();
         void PlayOnRoundLoose();
+        void StopCurrentMusic();
     }
 }

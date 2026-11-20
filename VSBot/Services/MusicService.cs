@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SwiftlyS2.Shared;
+using SwiftlyS2.Shared.ProtobufDefinitions;
 using SwiftlyS2.Shared.Sounds;
 using System.Text.Json;
 using VSBot.Models;
@@ -27,6 +28,8 @@ namespace VSBot.Services
 
         private Music? _musicList;
         private string _roundMusicName = string.Empty;
+        private uint _currentMusic;
+        private List<(uint emitId, int playerId)> _currentMusics = new();
 
         public void Initialize()
         {
@@ -73,7 +76,7 @@ namespace VSBot.Services
 
             var currentRound = _gameStateService.CurrentRound;
             var maxRounds = _config.CurrentValue.MaxRounds;
-            const float delayPlay = 1f;
+            const float delayPlay = 2f;
 
             if (currentRound == 0) // warmup
             {
@@ -124,7 +127,24 @@ namespace VSBot.Services
 
         public void PlayOnRound()
         {
-            throw new NotImplementedException();
+            if (_musicList is null)
+            {
+                throw new InvalidOperationException("Music is not initialized or failed to deserialize");
+            }
+
+            var roundMusic = _musicList.Round;
+            var random = Random.Shared.Next(roundMusic.Count);
+
+            _roundMusicName = roundMusic[random].DisplayName;
+
+            var freezeTime = _core.ConVar.Find<int>("mp_freezetime")!.Value;
+
+            var timer = _core.Scheduler.DelayBySeconds(freezeTime, () =>
+            {
+                PlaySoundToAll(roundMusic[random].EventName);
+            });
+
+            _core.Scheduler.StopOnMapChange(timer);
         }
 
         public void PlayOnRoundWin()
@@ -142,9 +162,22 @@ namespace VSBot.Services
             throw new NotImplementedException();
         }
 
+        public void StopCurrentMusic()
+        {
+            SendStopSoundMessageToAll(_currentMusic);
+
+            foreach (var music in _currentMusics)
+            {
+                SendStopSoundMessage(music.emitId, music.playerId);
+            }
+
+            _currentMusic = default;
+            _currentMusics.Clear();
+        }
+
         private void PlaySound(string eventName, int playerId)
         {
-            const float volume = .5f;
+            const float volume = 5f;
 
             using var soundEvent = new SoundEvent()
             {
@@ -153,12 +186,12 @@ namespace VSBot.Services
             };
 
             soundEvent.Recipients.AddRecipient(playerId);
-            soundEvent.Emit();
+            _currentMusics.Add((soundEvent.Emit(), playerId));
         }
 
         private void PlaySoundToAll(string eventName)
         {
-            const float volume = .5f;
+            const float volume = 5f;
 
             using var soundEvent = new SoundEvent()
             {
@@ -167,7 +200,25 @@ namespace VSBot.Services
             };
 
             soundEvent.Recipients.AddAllPlayers();
-            soundEvent.Emit();
+            _currentMusic = soundEvent.Emit();
+        }
+
+        private void SendStopSoundMessage(uint emitId, int playerId)
+        {
+            _core.NetMessage.Send<CMsgSosStopSoundEvent>(msg =>
+            {
+                msg.SoundeventGuid = unchecked((int)emitId);
+                msg.Recipients.AddRecipient(playerId);
+            });
+        }
+
+        private void SendStopSoundMessageToAll(uint emitId)
+        {
+            _core.NetMessage.Send<CMsgSosStopSoundEvent>(msg =>
+            {
+                msg.SoundeventGuid = unchecked((int)emitId);
+                msg.Recipients.AddAllPlayers();
+            });
         }
     }
 }

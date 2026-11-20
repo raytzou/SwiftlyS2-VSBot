@@ -138,10 +138,12 @@ namespace VSBot
 
             var config = GetRequiredService<IOptionsMonitor<Config>>();
             var maxRound = config.CurrentValue.MaxRounds;
+            var musicService = GetRequiredService<IMusicService>();
 
             if (gameState.CurrentRound > 0)
             {
                 playerService.DisableAllPlayersGodMod();
+                musicService.PlayOnRound();
                 BroadcastRoundStartMessages();
             }
 
@@ -173,6 +175,8 @@ namespace VSBot
                     var botMaxRespawnTimes = gameState.CurrentBotMaxRespawnTimes;
                     var availableRounds = maxRound - 1;
                     var winStreak = gameState.WinStreak;
+                    var freezeTime = Core.ConVar.Find<int>("mp_freezetime")!.Value;
+                    var currentRoundMusicName = musicService.CurrentRoundMusicName;
 
                     foreach (var playerPair in gameState.Players)
                     {
@@ -188,6 +192,16 @@ namespace VSBot
                             player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Win Streak: {ChatColors.Lime}{gameState.WinStreak}");
 
                         player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Max Respawn Times: {ChatColors.Purple}{botMaxRespawnTimes}");
+
+                        var timer = Core.Scheduler.DelayBySeconds(freezeTime, () =>
+                        {
+                            if (player is null || !player.IsValid)
+                                return;
+
+                            player.SendChat($" {ChatColors.Green}Now is playing: {currentRoundMusicName}");
+                        });
+
+                        Core.Scheduler.StopOnMapChange(timer);
                     }
                 }
                 else
@@ -215,6 +229,7 @@ namespace VSBot
             var playerService = GetRequiredService<IPlayerService>();
             var reviveCommand = GetRequiredService<IRevive>();
             var botModule = GetRequiredService<BotModule>();
+            var musicService = GetRequiredService<IMusicService>();
             var winTeam = @event.Winner;
 
             gameState.OnRoundEnd();
@@ -222,6 +237,7 @@ namespace VSBot
             playerService.KillTrackingWeaponTimer();
             reviveCommand.OnRoundEnd();
             botModule.OnRoundEnd();
+            musicService.StopCurrentMusic();
 
             return HookResult.Continue;
         }
