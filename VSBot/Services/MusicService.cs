@@ -122,7 +122,7 @@ namespace VSBot.Services
                 var currentPlayer = _core.PlayerManager.GetPlayer(playerId);
                 if (currentPlayer is null || !currentPlayer.IsValid || currentPlayer.IsFakeClient
                     || currentPlayer.SteamID != steamId || _gameStateService.IsRoundEnd) return;
-                PlaySound(eventName, player);
+                PlaySound(eventName, currentPlayer);
             });
             _joinPlaybackTimers[playerId] = timer;
             _core.Scheduler.StopOnMapChange(timer);
