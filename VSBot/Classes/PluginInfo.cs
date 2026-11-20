@@ -5,6 +5,6 @@
         public const string Author = "cynicat";
         public const string Name = "VSBot Plugin";
         public const string Id = "vsbot";
-        public const string Version = "26.11.31";
+        public const string Version = "26.11.32";
     }
 }
