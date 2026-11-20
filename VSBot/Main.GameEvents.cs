@@ -165,10 +165,12 @@ namespace VSBot
 
             void TriggerMatchEnd()
             {
-                Core.Scheduler.DelayBySeconds(1f, () =>
+                var timer = Core.Scheduler.DelayBySeconds(1f, () =>
                 {
                     Core.Engine.ExecuteCommand("mp_maxrounds 1");
                 });
+
+                Core.Scheduler.StopOnMapChange(timer);
             }
 
             void BroadcastRoundStartMessages()
