@@ -180,13 +180,15 @@ namespace VSBot
         private void UnhookGameEvents()
         {
             Core.GameEvent.UnhookPost<EventPlayerConnectFull>();
-            Core.GameEvent.UnhookPost<EventPlayerDisconnect>();
+            Core.GameEvent.UnhookPre<EventPlayerDisconnect>();
             Core.GameEvent.UnhookPost<EventRoundAnnounceWarmup>();
             Core.GameEvent.UnhookPost<EventWarmupEnd>();
             Core.GameEvent.UnhookPost<EventRoundStart>();
             Core.GameEvent.UnhookPost<EventRoundEnd>();
             Core.GameEvent.UnhookPost<EventBuytimeEnded>();
             Core.GameEvent.UnhookPost<EventPlayerDeath>();
+            Core.GameEvent.UnhookPost<EventPlayerTeam>();
+            Core.GameEvent.UnhookPost<EventPlayerSpawn>();
         }
 
         private void UnregisterListeners()
