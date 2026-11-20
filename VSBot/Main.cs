@@ -178,7 +178,7 @@ namespace VSBot
         private void UnhookGameEvents()
         {
             Core.GameEvent.UnhookPost<EventPlayerConnectFull>();
-            Core.GameEvent.UnhookPost<EventPlayerDisconnect>();
+            Core.GameEvent.UnhookPre<EventPlayerDisconnect>();
             Core.GameEvent.UnhookPost<EventRoundAnnounceWarmup>();
             Core.GameEvent.UnhookPost<EventWarmupEnd>();
             Core.GameEvent.UnhookPost<EventRoundStart>();
