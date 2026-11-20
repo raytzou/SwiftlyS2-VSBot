@@ -235,7 +235,7 @@ namespace VSBot.Services
         private void PlaySound(string eventName, IPlayer player)
         {
             var playerCache = _playerDataService.GetPlayerCache(player.SteamID);
-            float volume = playerCache?.Volume == null ? DefaultVolume : playerCache.Volume / 20;
+            float volume = playerCache?.Volume == null ? DefaultVolume : playerCache.Volume / 20f;
 
             using var soundEvent = new SoundEvent()
             {
