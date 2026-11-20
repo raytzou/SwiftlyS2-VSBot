@@ -144,7 +144,7 @@ namespace VSBot.Services
 
         private void PlaySound(string eventName, int playerId)
         {
-            const float volume = 10f;
+            const float volume = .5f;
 
             using var soundEvent = new SoundEvent()
             {
@@ -158,7 +158,7 @@ namespace VSBot.Services
 
         private void PlaySoundToAll(string eventName)
         {
-            const float volume = 10f;
+            const float volume = .5f;
 
             using var soundEvent = new SoundEvent()
             {
