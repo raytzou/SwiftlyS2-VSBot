@@ -48,6 +48,7 @@ namespace VSBot
             RegisterListeners();
             GetRequiredService<IPatchService>().ApplyAllAutoPatches();
             GetRequiredService<ISaysoundService>().Initialize();
+            GetRequiredService<IMusicService>().Initialize();
             Core.Logger.LogInformation("Plugin Loaded.");
         }
 
@@ -60,6 +61,7 @@ namespace VSBot
             var provider = _serviceProvider;
             if (provider is null) return;
 
+            GetRequiredService<IMusicService>().StopCurrentMusic();
             CancelMapInitialization();
             provider.GetRequiredService<UIModule>().Unload();
 
@@ -118,6 +120,7 @@ namespace VSBot
             services.AddSingleton<ISaysoundService, SaysoundService>();
             services.AddSingleton<IPlayerDataService, PlayerDataService>();
             services.AddSingleton<IDatabaseWorker, DatabaseWorker>();
+            services.AddSingleton<IMusicService, MusicService>();
         }
 
         private void InitializeCommandModule()
@@ -185,6 +188,8 @@ namespace VSBot
             Core.GameEvent.UnhookPost<EventRoundEnd>();
             Core.GameEvent.UnhookPost<EventBuytimeEnded>();
             Core.GameEvent.UnhookPost<EventPlayerDeath>();
+            Core.GameEvent.UnhookPost<EventPlayerTeam>();
+            Core.GameEvent.UnhookPost<EventPlayerSpawn>();
         }
 
         private void UnregisterListeners()

@@ -70,9 +70,11 @@ namespace VSBot
             GetRequiredService<UIModule>().OnMapUnload();
 
             var playerDataService = GetRequiredService<IPlayerDataService>();
+            var musicService = GetRequiredService<IMusicService>();
 
             playerDataService.SaveAllPlayerCachesToDB();
             playerDataService.ClearPlayerCaches();
+            musicService.Reset();
         }
 
         private void CancelMapInitialization()
@@ -92,13 +94,20 @@ namespace VSBot
         {
             var config = GetRequiredService<IOptionsMonitor<Config>>();
             var saysoundSoundEventFile = config.CurrentValue.SaysoundSoundEventFile;
+            var soundEventFile = config.CurrentValue.SoundEventFile;
 
             if (string.IsNullOrEmpty(saysoundSoundEventFile))
             {
                 throw new InvalidOperationException("Saysound Sound Event File is not set.");
             }
 
+            if (string.IsNullOrEmpty(soundEventFile))
+            {
+                throw new InvalidOperationException("Sound Event File is not set.");
+            }
+
             @event.AddItem(saysoundSoundEventFile);
+            @event.AddItem(soundEventFile);
         }
 
         private void EnableCheats()

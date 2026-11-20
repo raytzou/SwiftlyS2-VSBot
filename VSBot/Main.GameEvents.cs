@@ -54,6 +54,7 @@ namespace VSBot
         {
             var player = @event.UserIdPlayer;
             if (player is null) return HookResult.Continue;
+            GetRequiredService<IMusicService>().RemovePlayer(player.PlayerID);
             if (player.IsFakeClient)
                 GetRequiredService<BotModule>().ClearBotResources(player.SessionId);
             if (!player.IsValid) return HookResult.Continue;
@@ -83,6 +84,22 @@ namespace VSBot
                     thePlayer.SendChat($" {ChatColors.Lime}{player.Name} {Utility.GetTeamColorByPlayer(thePlayer)}has disconnected.");
                 }
             }
+        }
+
+        [GameEventHandler(HookMode.Post)]
+        public HookResult PlayerTeamHandler(EventPlayerTeam @event)
+        {
+            var player = @event.UserIdPlayer;
+            if (player is null || !player.IsValid) return HookResult.Continue;
+
+            if (!player.IsFakeClient)
+            {
+                var musicService = GetRequiredService<IMusicService>();
+
+                musicService.PlayAfterJoinTeam(player.PlayerID);
+            }
+
+            return HookResult.Continue;
         }
 
         [GameEventHandler(HookMode.Post)]
@@ -125,17 +142,20 @@ namespace VSBot
 
             var config = GetRequiredService<IOptionsMonitor<Config>>();
             var maxRound = config.CurrentValue.MaxRounds;
+            var musicService = GetRequiredService<IMusicService>();
 
-            if (gameState.CurrentRound > 0)
+            if (gameState.CurrentRound < maxRound)
             {
                 playerService.DisableAllPlayersGodMod();
-                BroadcastRoundStartMessages();
+                musicService.PlayOnRound();
             }
-
-            if (gameState.CurrentRound == maxRound)
+            else
             {
                 TriggerMatchEnd();
+                musicService.PlayOnGameOver();
             }
+
+            BroadcastRoundStartMessages();
 
             var botModule = GetRequiredService<BotModule>();
 
@@ -160,6 +180,8 @@ namespace VSBot
                     var botMaxRespawnTimes = gameState.CurrentBotMaxRespawnTimes;
                     var availableRounds = maxRound - 1;
                     var winStreak = gameState.WinStreak;
+                    var freezeTime = Core.ConVar.Find<int>("mp_freezetime")!.Value;
+                    var currentRoundMusicName = musicService.CurrentRoundMusicName;
 
                     foreach (var playerPair in gameState.Players)
                     {
@@ -175,6 +197,16 @@ namespace VSBot
                             player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Win Streak: {ChatColors.Lime}{gameState.WinStreak}");
 
                         player.SendChat($" {Utility.GetTeamColorByPlayer(player)}Max Respawn Times: {ChatColors.Purple}{botMaxRespawnTimes}");
+
+                        var timer = Core.Scheduler.DelayBySeconds(freezeTime, () =>
+                        {
+                            if (player is null || !player.IsValid)
+                                return;
+
+                            player.SendChat($" {ChatColors.Green}Now is playing: {currentRoundMusicName}");
+                        });
+
+                        Core.Scheduler.StopOnMapChange(timer);
                     }
                 }
                 else
@@ -202,6 +234,7 @@ namespace VSBot
             var playerService = GetRequiredService<IPlayerService>();
             var reviveCommand = GetRequiredService<IRevive>();
             var botModule = GetRequiredService<BotModule>();
+            var musicService = GetRequiredService<IMusicService>();
             var winTeam = @event.Winner;
 
             gameState.OnRoundEnd();
@@ -209,6 +242,16 @@ namespace VSBot
             playerService.KillTrackingWeaponTimer();
             reviveCommand.OnRoundEnd();
             botModule.OnRoundEnd();
+            musicService.StopCurrentMusic();
+
+            if (@event.Winner == (byte)gameState.HumanTeam)
+            {
+                musicService.PlayOnRoundWin();
+            }
+            else
+            {
+                musicService.PlayOnRoundLoose();
+            }
 
             return HookResult.Continue;
         }
