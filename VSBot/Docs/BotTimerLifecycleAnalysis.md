@@ -3,7 +3,7 @@
 - 日期：2026-11-20。
 - 分支：`fix/bot-timer-lifecycle`。
 - 基準：已 pull 的 `main`，`4a1bc09`。
-- 狀態：分析與方案，尚未修改執行邏輯、部署或實機驗證。
+- 狀態：已完成最小修正與開發端驗證，尚待部署實機測試。實作與 commit 對照見 [BotTimerLifecycleFix.md](BotTimerLifecycleFix.md)。下列盤點描述修正前狀態。
 - 範圍：完整盤點 BotModule 內的秒數計時器、下一次 world update 回呼，以及呼叫端的回合／地圖／玩家清理入口。不是全專案的 timer 稽核。
 
 ## 結論與證據界線
@@ -77,3 +77,11 @@ log 沒有記錄每次 timer 到期、ConVar 寫入或出生座標，因此以�
 伺服器回歸：使用原本 cfg，連續於開局 2～5 秒執行 `!slay @ct` 至少五回合，確認玩家及 Bot 均在正常 spawn；另正常遊玩超過 buyTime，確認一般 Bot 死亡後仍能隨機重生。freeze time 換圖、Bot 替換與插件重載分別測試。
 
 若需要追查實際時序，只增加受 `IsDebug` 控制的 `LogInformation`，在 random spawn 計時器排定／取消／啟用時記錄回合與延遲；不在每個 tick 或每個 Bot 一律輸出。原始 log、dump 與工作區外驗證程式不納入 repository。
+
+## 實作後補充
+
+- 已採用單一 random spawn timer，以及每個 Bot session 一筆撿武器 timer。
+- SDK 提供 `IPlayer.SessionId` 與 `GetPlayerFromSessionId`，因此實作直接以 session 作字典 key 與離線清理依據，不另建 slot 對照表。撿武器回呼另外比較排程時保存的 `Controller.PlayerPawn` handle，避免套用到不同 pawn。
+- `RespawnBot` 原來同一次 world update 的三個回呼合併為一個，驗證回合 token 與 session 後依序允許撿武器、重生、排定禁止撿武器。允許撿武器的內層 next-world 回呼也檢查回合 token，避免清理後再套用舊狀態。
+- 僅 BotModule 自有回合 token 在取消後 Dispose；框架回傳且交給 `StopOnMapChange` 的 timer 只 Cancel，不立即 Dispose。
+- 本輪沒有調整 buyTime 的起算點，也沒有全面替換其他短回呼；盤點所列其他短回呼風險仍屬未擴大處理的範圍。
