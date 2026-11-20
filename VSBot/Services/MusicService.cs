@@ -149,12 +149,28 @@ namespace VSBot.Services
 
         public void PlayOnRoundWin()
         {
-            throw new NotImplementedException();
+            if (_musicList is null)
+            {
+                throw new InvalidOperationException("Music is not initialized or failed to deserialize");
+            }
+
+            var roundWinMusic = _musicList.Win;
+            var random = Random.Shared.Next(roundWinMusic.Count);
+
+            PlaySoundToAll(roundWinMusic[random]);
         }
 
         public void PlayOnRoundLoose()
         {
-            throw new NotImplementedException();
+            if (_musicList is null)
+            {
+                throw new InvalidOperationException("Music is not initialized or failed to deserialize");
+            }
+
+            var roundLooseMusic = _musicList.Loose;
+            var random = Random.Shared.Next(roundLooseMusic.Count);
+
+            PlaySoundToAll(roundLooseMusic[random]);
         }
 
         public void PlayOnGameOver()

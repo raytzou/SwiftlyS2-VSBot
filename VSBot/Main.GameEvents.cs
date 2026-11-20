@@ -239,6 +239,15 @@ namespace VSBot
             botModule.OnRoundEnd();
             musicService.StopCurrentMusic();
 
+            if (@event.Winner == (byte)gameState.HumanTeam)
+            {
+                musicService.PlayOnRoundWin();
+            }
+            else
+            {
+                musicService.PlayOnRoundLoose();
+            }
+
             return HookResult.Continue;
         }
 
