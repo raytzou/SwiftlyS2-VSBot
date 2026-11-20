@@ -175,7 +175,15 @@ namespace VSBot.Services
 
         public void PlayOnGameOver()
         {
-            throw new NotImplementedException();
+            if (_musicList is null)
+            {
+                throw new InvalidOperationException("Music is not initialized or failed to deserialize");
+            }
+
+            var endGameMusic = _musicList.EndGame;
+            var random = Random.Shared.Next(endGameMusic.Count);
+
+            PlaySoundToAll(endGameMusic[random]);
         }
 
         public void StopCurrentMusic()

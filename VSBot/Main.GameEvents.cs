@@ -140,17 +140,18 @@ namespace VSBot
             var maxRound = config.CurrentValue.MaxRounds;
             var musicService = GetRequiredService<IMusicService>();
 
-            if (gameState.CurrentRound > 0)
+            if (gameState.CurrentRound < maxRound)
             {
                 playerService.DisableAllPlayersGodMod();
                 musicService.PlayOnRound();
-                BroadcastRoundStartMessages();
             }
-
-            if (gameState.CurrentRound == maxRound)
+            else
             {
                 TriggerMatchEnd();
+                musicService.PlayOnGameOver();
             }
+
+            BroadcastRoundStartMessages();
 
             var botModule = GetRequiredService<BotModule>();
 
