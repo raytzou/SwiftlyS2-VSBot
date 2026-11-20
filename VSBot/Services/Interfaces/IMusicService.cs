@@ -12,5 +12,6 @@
         void PlayOnRoundLoose();
         void StopCurrentMusic();
         void Reset();
+        void RemovePlayer(int playerId);
     }
 }

@@ -53,7 +53,9 @@ namespace VSBot
         public HookResult PlayerDisconnectHandler(EventPlayerDisconnect @event)
         {
             var player = @event.UserIdPlayer;
-            if (player is null || !player.IsValid) return HookResult.Continue;
+            if (player is null) return HookResult.Continue;
+            GetRequiredService<IMusicService>().RemovePlayer(player.PlayerID);
+            if (!player.IsValid) return HookResult.Continue;
 
             if (!player.IsFakeClient)
             {

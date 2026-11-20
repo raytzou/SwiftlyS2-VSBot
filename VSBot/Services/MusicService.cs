@@ -30,6 +30,7 @@ namespace VSBot.Services
         private SoundEventInfo? _roundMusic;
         private uint _currentMusic;
         private CancellationTokenSource? _roundPlaybackTimer;
+        private readonly Dictionary<int, CancellationTokenSource> _joinPlaybackTimers = new();
         private List<(uint emitId, int playerId)> _currentMusics = new();
 
         public void Initialize()
@@ -75,21 +76,18 @@ namespace VSBot.Services
                 throw new InvalidOperationException("Music is not initialized or failed to deserialize");
             }
 
+            CancelJoinPlayback(playerId);
+            if (_gameStateService.IsRoundEnd) return;
+
             var currentRound = _gameStateService.CurrentRound;
             var maxRounds = _config.CurrentValue.MaxRounds;
-            const float delayPlay = 2f;
 
             if (currentRound == 0) // warmup
             {
                 var warmupMusic = _musicList.Warmup;
                 var random = Random.Shared.Next(warmupMusic.Count);
 
-                var timer = _core.Scheduler.DelayBySeconds(delayPlay, () =>
-                {
-                    PlaySound(warmupMusic[random], playerId);
-                });
-
-                _core.Scheduler.StopOnMapChange(timer);
+                ScheduleJoinPlayback(warmupMusic[random], playerId);
             }
             else if (currentRound < maxRounds)
             {
@@ -98,25 +96,52 @@ namespace VSBot.Services
                 var targetMusic = _roundMusic;
                 if (targetMusic is null) return;
 
-                var timer = _core.Scheduler.DelayBySeconds(delayPlay, () =>
-                {
-                    PlaySound(targetMusic.EventName, playerId);
-                });
-
-                _core.Scheduler.StopOnMapChange(timer);
+                ScheduleJoinPlayback(targetMusic.EventName, playerId);
             }
             else // game over
             {
                 var endGame = _musicList.EndGame;
                 var random = Random.Shared.Next(endGame.Count);
 
-                var timer = _core.Scheduler.DelayBySeconds(delayPlay, () =>
-                {
-                    PlaySound(endGame[random], playerId);
-                });
-
-                _core.Scheduler.StopOnMapChange(timer);
+                ScheduleJoinPlayback(endGame[random], playerId);
             }
+        }
+
+        private void ScheduleJoinPlayback(string eventName, int playerId)
+        {
+            var player = _core.PlayerManager.GetPlayer(playerId);
+            if (player is null || !player.IsValid || player.IsFakeClient) return;
+            var steamId = player.SteamID;
+            var timer = _core.Scheduler.DelayBySeconds(2f, () =>
+            {
+                _joinPlaybackTimers.Remove(playerId);
+                var currentPlayer = _core.PlayerManager.GetPlayer(playerId);
+                if (currentPlayer is null || !currentPlayer.IsValid || currentPlayer.IsFakeClient
+                    || currentPlayer.SteamID != steamId || _gameStateService.IsRoundEnd) return;
+                PlaySound(eventName, playerId);
+            });
+            _joinPlaybackTimers[playerId] = timer;
+            _core.Scheduler.StopOnMapChange(timer);
+        }
+
+        private void CancelJoinPlayback(int playerId)
+        {
+            if (_joinPlaybackTimers.Remove(playerId, out var timer)) timer.Cancel();
+        }
+
+        public void RemovePlayer(int playerId)
+        {
+            CancelJoinPlayback(playerId);
+            _currentMusics.RemoveAll(music => music.playerId == playerId);
+        }
+
+        private void CancelPendingPlayback()
+        {
+            _roundPlaybackTimer?.Cancel();
+            _roundPlaybackTimer = null;
+            foreach (var timer in _joinPlaybackTimers.Values) timer.Cancel();
+            _joinPlaybackTimers.Clear();
+            _roundMusic = null;
         }
 
         public void PlayOnRound()
@@ -125,6 +150,8 @@ namespace VSBot.Services
             {
                 throw new InvalidOperationException("Music is not initialized or failed to deserialize");
             }
+
+            StopCurrentMusic();
 
             var roundMusic = _musicList.Round;
             var random = Random.Shared.Next(roundMusic.Count);
@@ -175,6 +202,8 @@ namespace VSBot.Services
                 throw new InvalidOperationException("Music is not initialized or failed to deserialize");
             }
 
+            StopCurrentMusic();
+
             var endGameMusic = _musicList.EndGame;
             var random = Random.Shared.Next(endGameMusic.Count);
 
@@ -183,6 +212,7 @@ namespace VSBot.Services
 
         public void StopCurrentMusic()
         {
+            CancelPendingPlayback();
             SendStopSoundMessageToAll(_currentMusic);
 
             foreach (var music in _currentMusics)
@@ -196,7 +226,7 @@ namespace VSBot.Services
 
         public void Reset()
         {
-            _roundMusic = null;
+            CancelPendingPlayback();
             _currentMusic = default;
             _currentMusics.Clear();
         }
