@@ -121,7 +121,7 @@ namespace VSBot.Services
                 var playerCache = _playerDataService.GetPlayerCache(player.SteamID);
                 var volume = (playerCache?.SaysoundVolume ?? DefaultSaysoundVolume) / 100f;
 
-                var sound = new SoundEvent()
+                using var sound = new SoundEvent()
                 {
                     Name = soundEventName,
                     Volume = volume,
