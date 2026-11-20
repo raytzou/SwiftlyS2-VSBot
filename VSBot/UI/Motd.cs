@@ -102,7 +102,6 @@ namespace VSBot.UI
             var localizer = _core.Translation.GetPlayerLocalizer(player);
             var bodyMsg = localizer["ui.motd.body", player.Name];
             var link1Msg = localizer["ui.motd.link1"];
-            var link2Msg = localizer["ui.motd.link2"];
 
             _motd.SetDialogVariableStringForPlayer(
                     playerId,
