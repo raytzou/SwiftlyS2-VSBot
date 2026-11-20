@@ -29,6 +29,7 @@ namespace VSBot.Services
         private Music? _musicList;
         private SoundEventInfo? _roundMusic;
         private uint _currentMusic;
+        private CancellationTokenSource? _roundPlaybackTimer;
         private List<(uint emitId, int playerId)> _currentMusics = new();
 
         public void Initialize()
@@ -92,6 +93,8 @@ namespace VSBot.Services
             }
             else if (currentRound < maxRounds)
             {
+                if (_roundPlaybackTimer is { IsCancellationRequested: false }) return;
+
                 var targetMusic = _roundMusic;
                 if (targetMusic is null) return;
 
@@ -130,12 +133,13 @@ namespace VSBot.Services
 
             var freezeTime = _core.ConVar.Find<int>("mp_freezetime")!.Value;
 
-            var timer = _core.Scheduler.DelayBySeconds(freezeTime, () =>
+            _roundPlaybackTimer = _core.Scheduler.DelayBySeconds(freezeTime, () =>
             {
+                _roundPlaybackTimer = null;
                 PlaySoundToAll(roundMusic[random].EventName);
             });
 
-            _core.Scheduler.StopOnMapChange(timer);
+            _core.Scheduler.StopOnMapChange(_roundPlaybackTimer);
         }
 
         public void PlayOnRoundWin()
