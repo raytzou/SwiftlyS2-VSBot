@@ -665,10 +665,13 @@ namespace VSBot.Modules
 
         private void EnableRandomSpawn()
         {
-            _core.Scheduler.NextWorldUpdate(() =>
+            var buyTime = _core.ConVar.Find<float>("mp_buytime")!.Value;
+            var timer = _core.Scheduler.DelayBySeconds(buyTime, () =>
             {
                 _core.Engine.ExecuteCommand("mp_randomspawn 1");
             });
+
+            _core.Scheduler.StopOnMapChange(timer);
         }
 
         private void DisableRandomSpawn()

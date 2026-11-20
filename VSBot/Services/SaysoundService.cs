@@ -48,8 +48,7 @@ namespace VSBot.Services
         {
             if (_saysounds is null)
             {
-                _logger.LogError("Saysound is not initialized");
-                return false;
+                throw new InvalidOperationException("Saysound is not initialized");
             }
 
             return _saysounds.TryGetValue(saysoundKeyword, out var _);
@@ -63,7 +62,6 @@ namespace VSBot.Services
 
             if (!File.Exists(fullPath))
             {
-                _logger.LogError("Saysound CSV File name is not set.");
                 throw new InvalidOperationException("Saysound CSV File name is not set.");
             }
 
@@ -98,8 +96,7 @@ namespace VSBot.Services
         {
             if (_saysounds is null)
             {
-                _logger.LogError("Saysound is not initialized");
-                return;
+                throw new InvalidOperationException("Saysound is not initialized");
             }
 
             if (!IsSaysound(saysoundKeyword))
@@ -124,7 +121,7 @@ namespace VSBot.Services
                 var playerCache = _playerDataService.GetPlayerCache(player.SteamID);
                 var volume = (playerCache?.SaysoundVolume ?? DefaultSaysoundVolume) / 100f;
 
-                var sound = new SoundEvent()
+                using var sound = new SoundEvent()
                 {
                     Name = soundEventName,
                     Volume = volume,
@@ -140,8 +137,7 @@ namespace VSBot.Services
         {
             if (_saysounds is null)
             {
-                _logger.LogError("Saysound is not initialized");
-                return;
+                throw new InvalidOperationException("Saysound is not initialized");
             }
 
             if (!IsSaysound(saysoundKeyword))
