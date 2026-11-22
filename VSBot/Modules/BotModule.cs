@@ -86,6 +86,11 @@ namespace VSBot.Modules
             });
         }
 
+        public void OnWarmup()
+        {
+            SetSpecialBotAttribute();
+        }
+
         public void OnWarmupEnd()
         {
             _logger.LogInformation("{moduleName} {methodName}", nameof(BotModule), nameof(OnWarmupEnd));
@@ -131,25 +136,6 @@ namespace VSBot.Modules
                 {
                     SetBotMoney(bot.Name, 0);
                 }
-            }
-
-            void SetSpecialBotAttribute()
-            {
-                if (!AreSpecialBotsAdded())
-                {
-                    _logger.LogWarning("{methodName}: Special bots are not added successfully", nameof(SetSpecialBotAttribute));
-                    return;
-                }
-
-                SetBotScore(BotProfile.Special[0], 999);
-                SetBotScore(BotProfile.Special[1], 888);
-                SetBotScore(BotProfile.Special[2], 777);
-                SetBotArmor(BotProfile.Special[0], 100);
-                SetBotArmor(BotProfile.Special[1], 100);
-                SetBotArmor(BotProfile.Special[2], 100);
-
-                if (_gameStateService.CurrentRound > 1)
-                    SetBotHealth(BotProfile.Special[2], 500);
             }
 
             void SetSpecialBotWeapon()
@@ -234,6 +220,25 @@ namespace VSBot.Modules
                 currentPlayer.Respawn();
                 PreventBotPickupWeapon(currentPlayer.Name);
             });
+        }
+
+        private void SetSpecialBotAttribute()
+        {
+            if (!AreSpecialBotsAdded())
+            {
+                _logger.LogWarning("{methodName}: Special bots are not added successfully", nameof(SetSpecialBotAttribute));
+                return;
+            }
+
+            SetBotScore(BotProfile.Special[0], 999);
+            SetBotScore(BotProfile.Special[1], 888);
+            SetBotScore(BotProfile.Special[2], 777);
+            SetBotArmor(BotProfile.Special[0], 100);
+            SetBotArmor(BotProfile.Special[1], 100);
+            SetBotArmor(BotProfile.Special[2], 100);
+
+            if (_gameStateService.CurrentRound > 1)
+                SetBotHealth(BotProfile.Special[2], 500);
         }
 
         private void DisableBotMovement()
