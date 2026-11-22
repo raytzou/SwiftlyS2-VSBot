@@ -108,6 +108,10 @@ namespace VSBot
 
             @event.AddItem(saysoundSoundEventFile);
             @event.AddItem(soundEventFile);
+
+            var modelService = GetRequiredService<IModelService>();
+
+            modelService.Precache(@event);
         }
 
         private void EnableCheats()

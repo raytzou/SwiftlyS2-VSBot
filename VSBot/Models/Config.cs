@@ -12,5 +12,6 @@
         public string SaysoundCSVFIleName { get; set; } = string.Empty;
         public string SoundInfoFileName { get; set; } = string.Empty;
         public string SoundEventFile { get; set; } = string.Empty;
+        public string ModelInfoFile { get; set; } = string.Empty;
     }
 }

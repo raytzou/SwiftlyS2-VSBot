@@ -49,6 +49,7 @@ namespace VSBot
             GetRequiredService<IPatchService>().ApplyAllAutoPatches();
             GetRequiredService<ISaysoundService>().Initialize();
             GetRequiredService<IMusicService>().Initialize();
+            GetRequiredService<IModelService>().Initialize();
             Core.Logger.LogInformation("Plugin Loaded.");
         }
 
@@ -121,6 +122,7 @@ namespace VSBot
             services.AddSingleton<IPlayerDataService, PlayerDataService>();
             services.AddSingleton<IDatabaseWorker, DatabaseWorker>();
             services.AddSingleton<IMusicService, MusicService>();
+            services.AddSingleton<IModelService, ModelService>();
         }
 
         private void InitializeCommandModule()
