@@ -106,8 +106,10 @@ namespace VSBot
         public HookResult RoundAnnounceWarmupHandler(EventRoundAnnounceWarmup @event)
         {
             var gameState = GetRequiredService<IGameStateService>();
+            var botModule = GetRequiredService<BotModule>();
 
             gameState.OnWarmupStarted();
+            botModule.OnWarmup();
 
             return HookResult.Continue;
         }
