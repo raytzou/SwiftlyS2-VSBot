@@ -18,6 +18,7 @@ namespace VSBot.Modules
         private readonly IGameStateService _gameStateService;
         private readonly IOptionsMonitor<Config> _config;
         private readonly IScoreboard _scoreboard;
+        private readonly IModelService _modelService;
 
         private int _mapGeneration;
         private bool _mapActive;
@@ -29,13 +30,14 @@ namespace VSBot.Modules
         private int _respawnTimes = 0;
         private readonly Regex NormalBotNameRegex = new(@"^\[(?<Grade>[^\]]+)\](?<Group>[^#]+)#(?<Num>\d{1,2})$");
 
-        public BotModule(ISwiftlyCore core, ILogger<BotModule> logger, IGameStateService gameStateService, IOptionsMonitor<Config> config, IScoreboard scoreboard)
+        public BotModule(ISwiftlyCore core, ILogger<BotModule> logger, IGameStateService gameStateService, IOptionsMonitor<Config> config, IScoreboard scoreboard, IModelService modelService)
         {
             _core = core;
             _logger = logger;
             _gameStateService = gameStateService;
             _config = config;
             _scoreboard = scoreboard;
+            _modelService = modelService;
         }
 
         public void OnMapStart()
@@ -89,6 +91,7 @@ namespace VSBot.Modules
         public void OnWarmup()
         {
             SetSpecialBotAttribute();
+            SetSpecialBotModel();
         }
 
         public void OnWarmupEnd()
@@ -117,6 +120,7 @@ namespace VSBot.Modules
             AllowAllBotsPickupWeapon();
             SetAllBotMoneyToZero();
             SetSpecialBotAttribute();
+            SetSpecialBotModel();
             EnableRandomSpawn();
 
             if (_gameStateService.CurrentRound > 1)
@@ -239,6 +243,49 @@ namespace VSBot.Modules
 
             if (_gameStateService.CurrentRound > 1)
                 SetBotHealth(BotProfile.Special[2], 500);
+        }
+
+        private void SetSpecialBotModel()
+        {
+            if (!AreSpecialBotsAdded())
+            {
+                _logger.LogWarning("{methodName}: Special bots are not added successfully", nameof(SetSpecialBotModel));
+                return;
+            }
+
+            var eagleEyeBot = _core.PlayerManager.GetBots()
+                .FirstOrDefault(f => f.Name == BotProfile.Special[0]);
+            var mimicBot = _core.PlayerManager.GetBots()
+                .FirstOrDefault(f => f.Name == BotProfile.Special[1]);
+            var rushBot = _core.PlayerManager.GetBots()
+                .FirstOrDefault(f => f.Name == BotProfile.Special[2]);
+
+
+            if (eagleEyeBot is null)
+            {
+                _logger.LogError("{methodName}: EagleEye bot is null.", nameof(SetSpecialBotModel));
+                return;
+            }
+
+            if (mimicBot is null)
+            {
+                _logger.LogError("{methodName}: mimic bot is null.", nameof(SetSpecialBotModel));
+                return;
+            }
+
+            if (rushBot is null)
+            {
+                _logger.LogError("{methodName}: Rush bot is null.", nameof(SetSpecialBotModel));
+                return;
+            }
+
+            _modelService.SetPlayerModel(eagleEyeBot, _modelService.ModelNames[31]);
+            _modelService.SetPlayerModel(rushBot, _modelService.ModelNames[18]);
+
+            var random = Random.Shared.Next(_modelService.ModelNames.Count);
+            var randomModelName = _modelService.ModelNames[random];
+
+            _modelService.SetPlayerModel(mimicBot, randomModelName);
         }
 
         private void DisableBotMovement()

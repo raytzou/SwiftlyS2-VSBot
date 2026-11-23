@@ -21,6 +21,9 @@ namespace VSBot.Services
             _config = config;
         }
 
+        public List<string> ModelNames => _modelInfos?.Keys.ToList() ??
+            throw new InvalidOperationException("Custom models are not initialized.");
+
         private Dictionary<string, ModelInfo>? _modelInfos;
 
         public void Initialize()

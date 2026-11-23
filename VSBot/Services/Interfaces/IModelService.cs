@@ -5,6 +5,8 @@ namespace VSBot.Services.Interfaces
 {
     public interface IModelService
     {
+        List<string> ModelNames { get; }
+
         void Initialize();
         void Precache(IOnPrecacheResourceEvent @event);
         void SetPlayerModel(IPlayer player, string modelName);
