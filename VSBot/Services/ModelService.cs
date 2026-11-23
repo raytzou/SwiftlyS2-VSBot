@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.Events;
+using SwiftlyS2.Shared.Players;
 using VSBot.Models;
 using VSBot.Services.Interfaces;
 
@@ -92,9 +93,77 @@ namespace VSBot.Services
             _logger.LogInformation("Custom models have been precached.");
         }
 
-        public void SetPlayerModel()
+        public void SetPlayerModel(IPlayer player, string modelName)
         {
-            throw new NotImplementedException();
+            if (_modelInfos is null)
+            {
+                throw new InvalidOperationException("Custom models are not initialized.");
+            }
+
+            if (player is not { IsValid: true } || player.PlayerPawn is not { IsValid: true })
+            {
+                _logger.LogError("Player is not valid.");
+                return;
+            }
+
+            if (!_modelInfos.TryGetValue(modelName, out var info))
+            {
+                _logger.LogError("Cannot find the modle, modle name: {modleName}", modelName);
+                return;
+            }
+
+            _core.Scheduler.NextWorldUpdate(() =>
+            {
+                if (player is not { IsValid: true } || player.PlayerPawn is not { IsValid: true })
+                    return;
+                player.PlayerPawn.SetModel(info.ModelPath);
+            });
+
+            if (info.MeshGroupIndex.HasValue)
+            {
+                _core.Scheduler.NextWorldUpdate(() =>
+                {
+                    if (player is not { IsValid: true } || player.PlayerPawn is not { IsValid: true })
+                        return;
+
+                    var bodyComponent = player.PlayerPawn.CBodyComponent;
+
+                    if (bodyComponent is null)
+                        return;
+
+                    var sceneNode = bodyComponent.SceneNode;
+
+                    if (sceneNode is null)
+                        return;
+
+                    sceneNode.GetSkeletonInstance().ModelState.MeshGroupMask =
+                        ComputeMeshGroupMask([info.MeshGroupIndex.Value], []);
+                });
+            }
+        }
+
+        private static ulong ComputeMeshGroupMask(int[] enabledMeshGroups, Dictionary<int, int> fixedMeshGroups)
+        {
+            ulong meshGroupMask = 0;
+
+            foreach (var meshGroup in enabledMeshGroups)
+            {
+                meshGroupMask |= (ulong)1 << meshGroup;
+            }
+
+            foreach (var fixedMeshGroup in fixedMeshGroups)
+            {
+                if (fixedMeshGroup.Value == 0)
+                {
+                    meshGroupMask &= ~((ulong)1 << fixedMeshGroup.Key);
+                }
+                else
+                {
+                    meshGroupMask |= (ulong)1 << fixedMeshGroup.Key;
+                }
+            }
+
+            return meshGroupMask;
         }
     }
 }
