@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using CsvHelper;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.Events;
@@ -44,28 +45,27 @@ namespace VSBot.Services
 
             _modelInfos = new();
 
-            var lines = File.ReadAllLines(modelInfoFile)
-                .Select(line => line.Split(["//"], StringSplitOptions.None)[0].Trim())
-                .Where(line => !string.IsNullOrWhiteSpace(line));
+            using var csv = CsvReader.FromFile(modelInfoFile);
 
-            foreach (var line in lines)
+            while (csv.Read())
             {
-                var split = line.Split(',');
-                var modelName = split[0];
-                var modelPath = split[1];
-                var armPath = split.Length > 2 ? split[2] : null;
-                var meshGroupIndex = split.Length > 3 ? split[3] : null;
+                var modelName = csv.GetString("ModelName");
 
-                _modelInfos.Add(modelName, new ModelInfo());
-                _modelInfos[modelName].ModelPath = modelPath;
-                if (!string.IsNullOrEmpty(armPath))
-                    _modelInfos[modelName].ArmPath = armPath;
-                else
-                    _modelInfos[modelName].ArmPath = null;
-                if (!string.IsNullOrEmpty(meshGroupIndex))
-                    _modelInfos[modelName].MeshGroupIndex = int.Parse(meshGroupIndex);
-                else
-                    _modelInfos[modelName].MeshGroupIndex = null;
+                if (string.IsNullOrEmpty(modelName))
+                    continue;
+
+                var modelPath = csv.GetString("ModelPath");
+                var armPath = csv.GetString("ArmPath");
+                var meshGroupIndex = csv.GetString("MeshGroupIndex");
+                var imageKey = csv.GetString("ImageKey");
+
+                _modelInfos.Add(modelName, new()
+                {
+                    ModelPath = modelPath,
+                    ArmPath = armPath,
+                    MeshGroupIndex = int.TryParse(meshGroupIndex, out var index) ? index : null,
+                    ImageKey = imageKey
+                });
             }
 
             _logger.LogInformation("Custom player models have been initialized, count: {count}", _modelInfos.Count);
