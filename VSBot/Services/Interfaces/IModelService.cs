@@ -12,5 +12,6 @@ namespace VSBot.Services.Interfaces
         void Initialize();
         void Precache(IOnPrecacheResourceEvent @event);
         void SetPlayerModel(IPlayer player, string modelName);
+        string? GetPlayerDefaultModelPath(ulong steamId);
     }
 }

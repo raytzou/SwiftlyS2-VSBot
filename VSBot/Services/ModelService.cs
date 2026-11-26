@@ -180,5 +180,25 @@ namespace VSBot.Services
 
             return meshGroupMask;
         }
+
+        public string? GetPlayerDefaultModelPath(ulong steamId)
+        {
+            var player = _core.PlayerManager.GetPlayerFromSteamId(steamId);
+
+            if (player is not { IsValid: true } || player.PlayerPawn is not { IsValid: true })
+                return null;
+
+            var bodyComponent = player.PlayerPawn.CBodyComponent;
+
+            if (bodyComponent is null)
+                return null;
+
+            var sceneNode = bodyComponent.SceneNode;
+
+            if (sceneNode is null)
+                return null;
+
+            return sceneNode.GetSkeletonInstance().ModelState.ModelName;
+        }
     }
 }
