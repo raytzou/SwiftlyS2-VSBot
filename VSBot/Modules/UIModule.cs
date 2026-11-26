@@ -76,6 +76,14 @@ namespace VSBot.Modules
             }
         }
 
+        public void OnPlayerDisconnect(int playerId)
+        {
+            if (playerId < 0 || playerId >= _core.PlayerManager.MaxPlayers) return;
+
+            foreach (var component in _components)
+                component.OnPlayerDisconnect(playerId);
+        }
+
         public void OnMapUnload()
         {
             ++_mapGeneration;

@@ -57,6 +57,7 @@ namespace VSBot
             GetRequiredService<IMusicService>().RemovePlayer(player.PlayerID);
             if (player.IsFakeClient)
                 GetRequiredService<BotModule>().ClearBotResources(player.SessionId);
+            GetRequiredService<UIModule>().OnPlayerDisconnect(player.PlayerID);
             if (!player.IsValid) return HookResult.Continue;
 
             if (!player.IsFakeClient)

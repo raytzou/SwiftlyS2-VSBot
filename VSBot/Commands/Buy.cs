@@ -110,7 +110,7 @@ namespace VSBot.Commands
             var closeMenu = new ButtonMenuOption("Close Menu");
             closeMenu.Click += (sender, args) =>
             {
-                _core.MenusAPI.CloseMenu(menu);
+                _core.MenusAPI.CloseMenuForPlayer(player, menu);
                 return ValueTask.CompletedTask;
             };
 
@@ -122,6 +122,8 @@ namespace VSBot.Commands
 
                 option.Click += (sender, args) =>
                 {
+                    _core.MenusAPI.CloseMenuForPlayer(player, menu);
+
                     _core.Scheduler.NextWorldUpdate(() =>
                     {
                         if (!IsMoneyEnough(player, Price))
@@ -140,7 +142,7 @@ namespace VSBot.Commands
                 menu.AddOption(option);
             }
 
-            _core.MenusAPI.OpenMenu(menu);
+            _core.MenusAPI.OpenMenuForPlayer(player, menu);
         }
 
         bool CanBuy(IPlayer player)
