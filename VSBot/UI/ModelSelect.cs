@@ -42,6 +42,44 @@ namespace VSBot.UI
 
         CCSCustomHudLayout? IUIComponentLifecycle.Layout => _modelSelectUI;
 
+        void IUIComponentLifecycle.OnPlayerDisconnect(int playerId)
+        {
+            _states.Remove(playerId);
+            _skinClasses.TryGetValue(playerId, out var skins);
+            _skinClasses.Remove(playerId);
+
+            var layout = _modelSelectUI;
+            if (layout is null || !layout.IsValid) return;
+
+            Close(playerId);
+
+            if (skins is not null)
+            {
+                for (var index = 0; index < skins.Length; index++)
+                {
+                    if (skins[index] is not null)
+                        SetClass(layout, playerId, SkinPanelId(index), skins[index]!, false);
+                }
+            }
+
+            layout.RemoveDialogVariableStringForPlayer(playerId, "models_count", "count");
+            layout.RemoveDialogVariableStringForPlayer(playerId, "models_page", "page");
+            layout.RemoveDialogVariableStringForPlayer(playerId, "models_preview_name", "name");
+
+            SetClass(layout, playerId, "models_previous", "disabled", false);
+            SetClass(layout, playerId, "models_next", "disabled", false);
+            SetClass(layout, playerId, "models_apply", "disabled", false);
+
+            for (var slot = 1; slot <= PageSize; slot++)
+            {
+                layout.RemoveDialogVariableStringForPlayer(playerId, $"models_index_{slot}", "index");
+                layout.RemoveDialogVariableStringForPlayer(playerId, $"models_name_{slot}", "name");
+
+                SetClass(layout, playerId, $"{SlotPrefix}{slot}", "empty", false);
+                SetClass(layout, playerId, $"{SlotPrefix}{slot}", "selected", false);
+            }
+        }
+
         void IUIComponentLifecycle.Initialize()
         {
             _states.Clear();
@@ -223,7 +261,7 @@ namespace VSBot.UI
 
                 SetClass(layout, playerId, $"{SlotPrefix}{slot}", "empty", !exists);
                 SetClass(layout, playerId, $"{SlotPrefix}{slot}", "selected", exists && state.Models[index].Name == state.SelectedName);
-                SetSkin(layout, playerId, slot, $"models_image_{slot}", exists ? state.Models[index].ImageKey : null);
+                SetSkin(layout, playerId, slot, exists ? state.Models[index].ImageKey : null);
             }
 
             var selected = state.SelectedName;
@@ -232,12 +270,17 @@ namespace VSBot.UI
                 : state.Models.FirstOrDefault(m => m.Name == selected).ImageKey;
 
             layout.SetDialogVariableStringForPlayer(playerId, "models_preview_name", "name", selected ?? "-");
-            SetSkin(layout, playerId, 0, "models_preview_image", selectedKey);
+            SetSkin(layout, playerId, 0, selectedKey);
             SetClass(layout, playerId, "models_apply", "disabled", selected is null);
         }
 
-        private void SetSkin(CCSCustomHudLayout layout, int playerId, int index, string panelId, string? imageKey)
+        private static string SkinPanelId(int index)
+            => index == 0 ? "models_preview_image" : $"models_image_{index}";
+
+        private void SetSkin(CCSCustomHudLayout layout, int playerId, int index, string? imageKey)
         {
+            var panelId = SkinPanelId(index);
+
             if (!_skinClasses.TryGetValue(playerId, out var skins))
                 _skinClasses[playerId] = skins = new string?[PageSize + 1];
 
