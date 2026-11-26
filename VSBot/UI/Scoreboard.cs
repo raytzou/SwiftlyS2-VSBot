@@ -23,6 +23,13 @@ namespace VSBot.UI
 
         CCSCustomHudLayout? IUIComponentLifecycle.Layout => _scoreboard;
 
+        void IUIComponentLifecycle.OnPlayerDisconnect(int playerId)
+        {
+            if (_scoreboard is null || !_scoreboard.IsValid) return;
+
+            _scoreboard.RemoveDialogVariableStringForPlayer(playerId, "bot_respawns", "remaining");
+        }
+
         void IUIComponentLifecycle.Unload()
         {
             var layout = _scoreboard;

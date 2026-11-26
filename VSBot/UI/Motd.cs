@@ -22,6 +22,17 @@ namespace VSBot.UI
 
         CCSCustomHudLayout? IUIComponentLifecycle.Layout => _motd;
 
+        void IUIComponentLifecycle.OnPlayerDisconnect(int playerId)
+        {
+            if (_motd is null || !_motd.IsValid) return;
+
+            Close(playerId);
+
+            _motd.RemoveDialogVariableStringForPlayer(playerId, "motd_body", "body");
+            _motd.RemoveDialogVariableStringForPlayer(playerId, "motd_link1", "link1");
+            _motd.RemoveDialogVariableStringForPlayer(playerId, "motd_link2", "link2");
+        }
+
         void IUIComponentLifecycle.Unload()
         {
             var layout = _motd;

@@ -7,5 +7,6 @@ namespace VSBot.UI.Interfaces
         CCSCustomHudLayout? Layout { get; }
         void Initialize();
         void Unload();
+        void OnPlayerDisconnect(int playerId);
     }
 }
