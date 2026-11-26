@@ -17,11 +17,11 @@ namespace VSBot.Modules
         private bool _registered;
         private bool _initialized;
 
-        public UIModule(ISwiftlyCore core, IMotd motd, IScoreboard scoreboard, ISaysoundLanguage saysoundLanguage, IOptionsMonitor<Config> config)
+        public UIModule(ISwiftlyCore core, IMotd motd, IScoreboard scoreboard, ISaysoundLanguage saysoundLanguage, IModelSelect modelSelect, IOptionsMonitor<Config> config)
         {
             _core = core;
             _config = config;
-            _components = [(IUIComponentLifecycle)motd, (IUIComponentLifecycle)scoreboard, (IUIComponentLifecycle)saysoundLanguage];
+            _components = [(IUIComponentLifecycle)motd, (IUIComponentLifecycle)scoreboard, (IUIComponentLifecycle)saysoundLanguage, (IUIComponentLifecycle)modelSelect];
         }
 
         public void Register()

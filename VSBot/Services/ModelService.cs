@@ -27,6 +27,18 @@ namespace VSBot.Services
 
         private Dictionary<string, ModelInfo>? _modelInfos;
 
+        public string? GetImageKey(string modelName)
+        {
+            if (_modelInfos is null)
+            {
+                throw new InvalidOperationException("Custom models are not initialized.");
+            }
+
+            return _modelInfos.TryGetValue(modelName, out var info) && !string.IsNullOrEmpty(info.ImageKey)
+                ? Path.GetFileNameWithoutExtension(info.ImageKey)
+                : null;
+        }
+
         public void Initialize()
         {
             var gameRoot = _core.GameDirectory;

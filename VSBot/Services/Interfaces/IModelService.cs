@@ -7,6 +7,8 @@ namespace VSBot.Services.Interfaces
     {
         List<string> ModelNames { get; }
 
+        string? GetImageKey(string modelName);
+
         void Initialize();
         void Precache(IOnPrecacheResourceEvent @event);
         void SetPlayerModel(IPlayer player, string modelName);
