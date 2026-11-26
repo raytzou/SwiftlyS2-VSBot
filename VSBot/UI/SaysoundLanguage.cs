@@ -25,6 +25,18 @@ namespace VSBot.UI
 
         CCSCustomHudLayout? IUIComponentLifecycle.Layout => _saysoundLanguageUI;
 
+        void IUIComponentLifecycle.OnPlayerDisconnect(int playerId)
+        {
+            if (_saysoundLanguageUI is null || !_saysoundLanguageUI.IsValid) return;
+
+            Close(playerId);
+
+            _saysoundLanguageUI.RemoveDialogVariableStringForPlayer(playerId, "ss_lang_title", "title");
+            _saysoundLanguageUI.RemoveDialogVariableStringForPlayer(playerId, "ss_lang_label_en", "label");
+            _saysoundLanguageUI.RemoveDialogVariableStringForPlayer(playerId, "ss_lang_label_ja", "label");
+            _saysoundLanguageUI.RemoveDialogVariableStringForPlayer(playerId, "ss_lang_label_zh_tw", "label");
+        }
+
         void IUIComponentLifecycle.Unload()
         {
             var layout = _saysoundLanguageUI;
