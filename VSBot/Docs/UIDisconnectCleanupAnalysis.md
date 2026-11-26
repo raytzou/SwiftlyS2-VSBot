@@ -3,7 +3,7 @@
 - 分析日期：2026-11-26。
 - 分支：`fix/ui-disconnect-cleanup`。
 - 基準：已 pull 最新 `main`，commit `42b8f2c`。
-- 狀態：僅分析與規劃，尚未修改程式碼、執行伺服器驗證或宣稱問題已修復。
+- 狀態：已依核准規格完成程式修正與建置；尚待伺服器驗證。原分析與計畫保留，實作結果見文末。
 
 ## 結論與證據
 
@@ -132,3 +132,32 @@ RemoveDialogVariableStringForPlayer 移除的是玩家覆寫，回到全域設�
 - 專案引用 `SwiftlyS2.CS2 1.5.1`，已核對本機套件 XML 文件的 RemoveDialogVariableStringForPlayer 語意與方法簽章。
 - 已讀取 [對應 SDK HUD 實作](https://github.com/swiftly-solution/swiftlys2/blob/821ccf1acd11e81423238ee17e8873e08ebe68f0/managed/src/SwiftlyS2.Core/Modules/Schemas/Extensions/CCSCustomHudLayoutImpl.cs)：同步 setter 先確認 main thread，再呼叫原生函式；getter 依 playerId 查詢狀態。
 - 此核對確認可用 API 與管理端資料存取方式，不能替代目前 CS2 runtime 的離線／slot 重用整合測試。尚未重現或量測原生清理結果。
+
+## 實作結果（2026-11-26）
+
+已參考「審核 UI 清理規格」對話的最終核准：接受 Scoreboard 在下一次 Update 前留空／回到 Layout 預設，不新增 ConnectFull 初始化，也不擴大處理框架選單。
+
+### 已完成提交
+
+| Commit | 內容 |
+| --- | --- |
+| `54163ac` — `docs(ui): record approved disconnect cleanup plan` | 先提交已核准的分析、介面規劃與測試步驟。 |
+| `5d7c50d` — `fix(ui): clear per-player HUD state on disconnect` | 修改六個程式檔案，加入生命週期方法與分派、關閉互動 UI、移除三個 HUD 的玩家覆寫。 |
+
+本節以後續 docs commit 記錄實作與驗證結果，commit body 條列變更。所有修改位於 `fix/ui-disconnect-cleanup`。
+
+### 實際流程與範圍
+
+- Disconnect Pre hook：player 非 null → Music.RemovePlayer → 僅 Bot 執行 ClearBotResources → UIModule.OnPlayerDisconnect → 既有 IsValid 判斷與玩家資料清理。
+- UIModule 檢查 playerId 範圍，對全部元件同步分派，不以 `_initialized` 阻擋清理。元件自行檢查 Layout 是否有效。
+- Motd 與 SaysoundLanguage 沿用 Close 關閉並釋放輸入，分別移除三個、四個文字覆寫；Scoreboard 移除剩餘次數覆寫。
+- 沒有新增 timer、事件訂閱、try-catch、常態除錯輸出或連線初始化；未修改 BotModule、PlayerDataService、MenusAPI 與換圖生命週期。
+- 檢查現有 ClearBotResources：只移除／取消該 Bot 的 pickup timer，不會寫回 Scoreboard。Scoreboard.Update 在 Bot 重生次數消耗及 SetMaxRespawnTimes 時同步寫入，遍歷當前 gameState.Players；正常離線流程會移除玩家，無效玩家也會被 Update 跳過。沒有捕捉舊 playerId 的延遲 HUD 寫入。
+
+### 已完成驗證與限制
+
+- `dotnet build VSBot.slnx --no-restore -v quiet` 通過：0 errors、14 個既有 `Commands/Buy.cs` 框架選單棄用警告。
+- `git diff --check`（沿用 CRLF 設定）通過；逐一核對八個被移除的 panel／variable 與原 Open／Update 寫入項目一致。
+- Repository 外的驗證程式引用本次編譯出的實際類別；無 Layout 時，UIModule 離線分派可完成且不需要重新查找玩家或 scheduler。
+- 嘗試以 DispatchProxy 模擬 SDK 的 CCSCustomHudLayout，但 SDK interface 的 `From` 成員造成代理型別建立時 TypeLoadException。因此未完成有 Layout 的替身行為測試，不能宣稱 slot 隔離、重複清理與原生狀態移除已通過自動測試。此為驗證工具限制，並非本次插件建置錯誤；未因此更動產品架構，驗證程式也未加入 Repository。
+- 上方八項伺服器驗收仍待執行，尤其是 Pre hook 中原生 setter 能否清理離線 slot、重連不再顯示舊選單，以及其他在線玩家不受影響。
