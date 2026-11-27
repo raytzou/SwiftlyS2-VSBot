@@ -13,5 +13,7 @@
         public string SoundInfoFileName { get; set; } = string.Empty;
         public string SoundEventFile { get; set; } = string.Empty;
         public string ModelInfoFile { get; set; } = string.Empty;
+        public int EagleEyeBotModelIndex { get; set; } = 0;
+        public int RushBotModelIndex { get; set; } = 0;
     }
 }
