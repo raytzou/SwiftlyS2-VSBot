@@ -308,16 +308,28 @@ namespace VSBot
 
             var gameState = GetRequiredService<IGameStateService>();
             var playerService = GetRequiredService<IPlayerService>();
+            var playerDataService = GetRequiredService<IPlayerDataService>();
 
             if (gameState.CurrentRound == 0)
             {
                 playerService.EnableGodMod(player.Slot);
             }
 
-            if (!player.IsFakeClient)
+            if (player.IsFakeClient)
+                return HookResult.Continue;
+
+            playerService.ApplySpawnHealth(player);
+            playerDataService.WhenPlayerCacheReady(player.SteamID, (cache) =>
             {
-                playerService.ApplySpawnHealth(player);
-            }
+                var modelName = cache.SelectedModelName;
+
+                if (string.IsNullOrEmpty(modelName))
+                    return;
+
+                var modelService = GetRequiredService<IModelService>();
+
+                modelService.SetPlayerModel(player, modelName);
+            });
 
             return HookResult.Continue;
         }
