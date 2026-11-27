@@ -5,6 +5,7 @@ using SwiftlyS2.Shared.Players;
 using SwiftlyS2.Shared.SchemaDefinitions;
 using VSBot.Services.Interfaces;
 using VSBot.UI.Interfaces;
+using VSBot.UI.ViewState;
 
 namespace VSBot.UI
 {
@@ -26,18 +27,10 @@ namespace VSBot.UI
             _playerDataService = playerDataService;
         }
 
-        private sealed class ViewState
-        {
-            public required ulong SteamId { get; init; }
-            public required (string Name, string? ImageKey)[] Models { get; init; }
-            public int Page { get; set; }
-            public string? SelectedName { get; set; }
-        }
-
         private CCSCustomHudLayout? _modelSelectUI;
 
         // Only valid while a player has the UI open; SteamId guards against slot reuse.
-        private readonly Dictionary<int, ViewState> _states = new();
+        private readonly Dictionary<int, ModelSelectViewState> _states = new();
 
         // Skin classes live on the layout per player, so they outlive Close; index 0 is the preview, 1..8 are the cards.
         private readonly Dictionary<int, string?[]> _skinClasses = new();
@@ -135,7 +128,7 @@ namespace VSBot.UI
                 .Select(name => (name, _modelService.GetImageKey(name)))
                 .ToArray();
 
-            var state = new ViewState
+            var state = new ModelSelectViewState
             {
                 SteamId = player.SteamID,
                 Models = models
@@ -239,7 +232,7 @@ namespace VSBot.UI
             Render(player.PlayerID, state);
         }
 
-        private static bool TrySelectSlot(string buttonId, ViewState state)
+        private static bool TrySelectSlot(string buttonId, ModelSelectViewState state)
         {
             if (!buttonId.StartsWith(SlotPrefix, StringComparison.Ordinal)
                 || !int.TryParse(buttonId.AsSpan(SlotPrefix.Length), out var slot)
@@ -254,7 +247,7 @@ namespace VSBot.UI
             return true;
         }
 
-        private void Apply(IPlayer player, ViewState state)
+        private void Apply(IPlayer player, ModelSelectViewState state)
         {
             if (state.SelectedName is null) return;
 
@@ -279,10 +272,10 @@ namespace VSBot.UI
             player.SendChat($"Your model has been set to {state.SelectedName}.");
         }
 
-        private static int GetPageCount(ViewState state)
+        private static int GetPageCount(ModelSelectViewState state)
             => Math.Max(1, (state.Models.Length + PageSize - 1) / PageSize);
 
-        private void Render(int playerId, ViewState state)
+        private void Render(int playerId, ModelSelectViewState state)
         {
             var layout = _modelSelectUI;
             if (layout is null || !layout.IsValid) return;
