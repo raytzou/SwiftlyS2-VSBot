@@ -13,5 +13,6 @@ namespace VSBot.Services.Interfaces
         void Precache(IOnPrecacheResourceEvent @event);
         void SetPlayerModel(IPlayer player, string modelName);
         void SetPlayerDefaultModelPath(IPlayer player);
+        void SetPlayerModelByPath(IPlayer player, string modelPath);
     }
 }

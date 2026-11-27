@@ -16,12 +16,14 @@ namespace VSBot.UI
         private readonly ISwiftlyCore _core;
         private readonly ILogger<ModelSelect> _logger;
         private readonly IModelService _modelService;
+        private readonly IPlayerDataService _playerDataService;
 
-        public ModelSelect(ISwiftlyCore core, ILogger<ModelSelect> logger, IModelService modelService)
+        public ModelSelect(ISwiftlyCore core, ILogger<ModelSelect> logger, IModelService modelService, IPlayerDataService playerDataService)
         {
             _core = core;
             _logger = logger;
             _modelService = modelService;
+            _playerDataService = playerDataService;
         }
 
         private sealed class ViewState
@@ -191,7 +193,22 @@ namespace VSBot.UI
                     Close(player.PlayerID);
                     return;
                 case "models_reset":
-                    //TODO: need PlayerCache
+                    var playerCache = _playerDataService.GetPlayerCache(player.SteamID);
+
+                    if (playerCache is null)
+                    {
+                        if (_playerDataService.GetPlayerCacheState(player.SteamID) == PlayerCacheState.Loading)
+                        {
+                            player.SendChat("Your data is still loading, please try again later.");
+                            return;
+                        }
+
+                        player.SendChat("Cannot reset your model! Please contact admin!");
+                        _logger.LogError("Cannot find the player's cache, {steamId}", player.SteamID);
+                        return;
+                    }
+
+                    _modelService.SetPlayerModelByPath(player, playerCache.DefaultSkinModelPath);
                     return;
                 case "models_previous":
                     if (state.Page > 0) state.Page--;

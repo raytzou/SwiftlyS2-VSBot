@@ -239,5 +239,21 @@ namespace VSBot.Services
                 });
             });
         }
+
+        public void SetPlayerModelByPath(IPlayer player, string modelPath)
+        {
+            if (player is not { IsValid: true } || player.PlayerPawn is not { IsValid: true })
+            {
+                _logger.LogError("Player is not valid.");
+                return;
+            }
+
+            _core.Scheduler.NextWorldUpdate(() =>
+            {
+                if (player is not { IsValid: true } || player.PlayerPawn is not { IsValid: true })
+                    return;
+                player.PlayerPawn.SetModel(modelPath);
+            });
+        }
     }
 }
