@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.Players;
@@ -27,6 +28,19 @@ namespace VSBot.Services
         {
             public PlayerCacheState State = PlayerCacheState.Loading;
             public Player? Data;
+            private readonly List<(Action<Player> Callback, string Caller)> _pendingCallbacks = [];
+
+            public void AddPendingCallback(Action<Player> callback, string caller) =>
+                _pendingCallbacks.Add((callback, caller));
+
+            public (Action<Player> Callback, string Caller)[] TakePendingCallbacks()
+            {
+                var callbacks = _pendingCallbacks.ToArray();
+                _pendingCallbacks.Clear();
+                return callbacks;
+            }
+
+            public void ClearPendingCallbacks() => _pendingCallbacks.Clear();
         }
 
         private Dictionary<ulong, PlayerCacheEntry> _playerCaches = new();
@@ -68,6 +82,8 @@ namespace VSBot.Services
 
         public void PreparePlayerCache(IPlayer player)
         {
+            if (_isShutdown) return;
+
             var steamId = player.SteamID;
 
             if (_playerCaches.ContainsKey(steamId))
@@ -88,6 +104,7 @@ namespace VSBot.Services
             if (!accepted)
             {
                 entry.State = PlayerCacheState.LoadFailed;
+                entry.ClearPendingCallbacks();
                 _logger.LogWarning("Database queue rejected the load request, SteamID: {steamId}", steamId);
             }
         }
@@ -161,29 +178,90 @@ namespace VSBot.Services
             try
             {
                 if (_isShutdown)
+                {
+                    entry.ClearPendingCallbacks();
                     return;
+                }
 
                 if (!_playerCaches.TryGetValue(steamId, out var current)
                     || !ReferenceEquals(current, entry)
                     || entry.State != PlayerCacheState.Loading)
                 {
-                    _logger.LogDebug("Discard stale player load result, SteamID: {steamId}", steamId);
+                    entry.ClearPendingCallbacks();
                     return;
                 }
 
                 if (result is null)
                 {
                     entry.State = PlayerCacheState.LoadFailed;
+                    foreach (var pending in entry.TakePendingCallbacks())
+                        _logger.LogWarning("Cache load failed; callback discarded. SteamID: {SteamId}, Caller: {Caller}", steamId, pending.Caller);
                     return;
                 }
 
                 entry.Data = result;
                 entry.State = PlayerCacheState.Ready;
                 _logger.LogInformation("Player cache added: {steamId}", steamId);
+
+                foreach (var pending in entry.TakePendingCallbacks())
+                {
+                    if (_isShutdown || !_playerCaches.TryGetValue(steamId, out current)
+                        || !ReferenceEquals(current, entry) || entry.State != PlayerCacheState.Ready
+                        || !ReferenceEquals(entry.Data, result))
+                        break;
+
+                    InvokeCacheReadyCallback(steamId, result, pending.Callback, pending.Caller);
+                }
             }
             catch (Exception ex)
             {
+                if (entry.State == PlayerCacheState.Loading)
+                    entry.State = PlayerCacheState.LoadFailed;
+                entry.ClearPendingCallbacks();
                 _logger.LogError(ex, "Failed to apply player load result, SteamID: {steamId}", steamId);
+            }
+        }
+
+        /// <inheritdoc />
+        public void WhenPlayerCacheReady(ulong steamId, Action<Player> callback, [CallerMemberName] string caller = "")
+        {
+            ArgumentNullException.ThrowIfNull(callback);
+
+            if (_isShutdown || !_playerCaches.TryGetValue(steamId, out var entry))
+            {
+                _logger.LogWarning("Cannot register cache callback: {Reason}. SteamID: {SteamId}, Caller: {Caller}",
+                    _isShutdown ? "service shut down" : "cache not prepared", steamId, caller);
+                return;
+            }
+
+            switch (entry.State)
+            {
+                case PlayerCacheState.Loading:
+                    entry.AddPendingCallback(callback, caller);
+                    return;
+                case PlayerCacheState.Ready:
+                    if (entry.Data is not { } data)
+                    {
+                        _logger.LogError("Ready cache has no data. SteamID: {SteamId}, Caller: {Caller}", steamId, caller);
+                        return;
+                    }
+                    InvokeCacheReadyCallback(steamId, data, callback, caller);
+                    return;
+                case PlayerCacheState.LoadFailed:
+                    _logger.LogWarning("Cannot register callback: cache load failed. SteamID: {SteamId}, Caller: {Caller}", steamId, caller);
+                    return;
+            }
+        }
+
+        private void InvokeCacheReadyCallback(ulong steamId, Player data, Action<Player> callback, string caller)
+        {
+            try
+            {
+                callback(data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Cache-ready callback failed. SteamID: {SteamId}, Caller: {Caller}", steamId, caller);
             }
         }
 
@@ -280,7 +358,8 @@ namespace VSBot.Services
         public void RemovePlayerCache(ulong steamId)
         {
             _modifiedCaches.Remove(steamId);
-            _playerCaches.Remove(steamId);
+            if (_playerCaches.Remove(steamId, out var entry))
+                entry.ClearPendingCallbacks();
         }
 
         public void SaveAndRemovePlayerCache(ulong steamId)
@@ -296,6 +375,8 @@ namespace VSBot.Services
 
         public void ClearPlayerCaches()
         {
+            foreach (var entry in _playerCaches.Values)
+                entry.ClearPendingCallbacks();
             _playerCaches.Clear();
             _modifiedCaches.Clear();
         }

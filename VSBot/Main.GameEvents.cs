@@ -55,26 +55,28 @@ namespace VSBot
             var player = @event.UserIdPlayer;
             if (player is null) return HookResult.Continue;
             GetRequiredService<IMusicService>().RemovePlayer(player.PlayerID);
-            if (player.IsFakeClient)
-                GetRequiredService<BotModule>().ClearBotResources(player.SessionId);
             GetRequiredService<UIModule>().OnPlayerDisconnect(player.PlayerID);
+
+            if (player.IsFakeClient)
+            {
+                GetRequiredService<BotModule>().ClearBotResources(player.SessionId);
+                return HookResult.Continue;
+            }
+
+            var steamId = player.SteamID;
+            GetRequiredService<IPlayerDataService>().SaveAndRemovePlayerCache(steamId);
             if (!player.IsValid) return HookResult.Continue;
 
-            if (!player.IsFakeClient)
-            {
-                var gameState = GetRequiredService<IGameStateService>();
-                var playerService = GetRequiredService<IPlayerService>();
-                var reviveCommand = GetRequiredService<IRevive>();
-                var playerDataService = GetRequiredService<IPlayerDataService>();
+            var gameState = GetRequiredService<IGameStateService>();
+            var playerService = GetRequiredService<IPlayerService>();
+            var reviveCommand = GetRequiredService<IRevive>();
 
-                gameState.RemovePlayer(player.SteamID);
-                playerService.RemovePlayerPosition(player.SteamID);
-                playerService.RemovePlayerWeaponStatus(player.SteamID);
-                reviveCommand.OnPlayerDisconnect(player.SteamID);
-                SendDisconnectedMessage(gameState.Players.Values.ToList());
-                playerDataService.SaveAndRemovePlayerCache(player.SteamID);
-                Core.Logger.LogInformation("{client} has disconnected at {DT}", player.Name, DateTime.Now);
-            }
+            gameState.RemovePlayer(steamId);
+            playerService.RemovePlayerPosition(steamId);
+            playerService.RemovePlayerWeaponStatus(steamId);
+            reviveCommand.OnPlayerDisconnect(steamId);
+            SendDisconnectedMessage(gameState.Players.Values.ToList());
+            Core.Logger.LogInformation("{client} has disconnected at {DT}", player.Name, DateTime.Now);
 
             return HookResult.Continue;
 
