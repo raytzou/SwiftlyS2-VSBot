@@ -14,12 +14,14 @@ namespace VSBot.Services
         private readonly ISwiftlyCore _core;
         private readonly ILogger<ModelService> _logger;
         private readonly IOptionsMonitor<Config> _config;
+        private readonly IPlayerDataService _playerDataService;
 
-        public ModelService(ISwiftlyCore core, ILogger<ModelService> logger, IOptionsMonitor<Config> config)
+        public ModelService(ISwiftlyCore core, ILogger<ModelService> logger, IOptionsMonitor<Config> config, IPlayerDataService playerDataService)
         {
             _core = core;
             _logger = logger;
             _config = config;
+            _playerDataService = playerDataService;
         }
 
         public List<string> ModelNames => _modelInfos?.Keys.ToList() ??
@@ -181,7 +183,7 @@ namespace VSBot.Services
             return meshGroupMask;
         }
 
-        public string? GetPlayerDefaultModelPath(ulong steamId)
+        private string? GetPlayerDefaultModelPath(ulong steamId)
         {
             var player = _core.PlayerManager.GetPlayerFromSteamId(steamId);
 
@@ -199,6 +201,43 @@ namespace VSBot.Services
                 return null;
 
             return sceneNode.GetSkeletonInstance().ModelState.ModelName;
+        }
+
+        public void SetPlayerDefaultModelPath(IPlayer player)
+        {
+            _core.Scheduler.NextWorldUpdate(() =>
+            {
+                if (player is not { IsValid: true })
+                {
+                    _logger.LogWarning("Player is invalid, SteamID: {steamId}", player.SteamID);
+                    return;
+                }
+
+                if (player.PlayerPawn is not { IsValid: true })
+                {
+                    player.SendChat("Something went wrong! Please reconnect to server!");
+                    _logger.LogWarning("Player controller is invalid, SteamID: {steamId}", player.SteamID);
+                    return;
+                }
+
+                var defaultModelPath = GetPlayerDefaultModelPath(player.SteamID);
+
+                if (string.IsNullOrEmpty(defaultModelPath))
+                {
+                    player.SendChat("Something went wrong! Please reconnect to server!");
+                    _logger.LogWarning("Cannot get player's default model path, SteamID: {steamId}", player.SteamID);
+                    return;
+                }
+
+
+                _playerDataService.WhenPlayerCacheReady(player.SteamID, (cache) =>
+                {
+                    if (cache.DefaultSkinModelPath == defaultModelPath)
+                        return;
+                    cache.DefaultSkinModelPath = defaultModelPath;
+                    _playerDataService.UpdatePlayerCache(cache);
+                });
+            });
         }
     }
 }

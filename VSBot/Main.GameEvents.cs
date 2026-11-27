@@ -95,12 +95,14 @@ namespace VSBot
             var player = @event.UserIdPlayer;
             if (player is null || !player.IsValid) return HookResult.Continue;
 
-            if (!player.IsFakeClient)
-            {
-                var musicService = GetRequiredService<IMusicService>();
+            if (player.IsFakeClient)
+                return HookResult.Continue;
 
-                musicService.PlayAfterJoinTeam(player.PlayerID);
-            }
+            var musicService = GetRequiredService<IMusicService>();
+            var modelService = GetRequiredService<IModelService>();
+
+            musicService.PlayAfterJoinTeam(player.PlayerID);
+            modelService.SetPlayerDefaultModelPath(player);
 
             return HookResult.Continue;
         }
