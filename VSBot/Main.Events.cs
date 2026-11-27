@@ -44,6 +44,7 @@ namespace VSBot
             var config = GetRequiredService<IOptionsMonitor<Config>>();
             var botModule = GetRequiredService<BotModule>();
             var playerDataService = GetRequiredService<IPlayerDataService>();
+            var modelService = GetRequiredService<IModelService>();
 
             if (config.CurrentValue.IsDebug)
             {
@@ -61,6 +62,7 @@ namespace VSBot
             gameState.OnMapStart();
             botModule.OnMapStart();
             playerDataService.ClearPlayerCaches();
+            modelService.ClearDefaultModelPaths();
             Core.Logger.LogInformation("Map start: {mapName}", mapName);
         }
 
@@ -71,10 +73,12 @@ namespace VSBot
 
             var playerDataService = GetRequiredService<IPlayerDataService>();
             var musicService = GetRequiredService<IMusicService>();
+            var modelService = GetRequiredService<IModelService>();
 
             playerDataService.SaveAllPlayerCachesToDB();
             playerDataService.ClearPlayerCaches();
             musicService.Reset();
+            modelService.ClearDefaultModelPaths();
         }
 
         private void CancelMapInitialization()

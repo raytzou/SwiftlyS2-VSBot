@@ -248,7 +248,13 @@ namespace VSBot.Services
             });
         }
 
-        public string? GetDefaultModelPath(ulong steamId) => 
+        public string? GetDefaultModelPath(ulong steamId) =>
             _defaultModels.TryGetValue(steamId, out var defaultModelPath) ? defaultModelPath : null;
+
+        public void RemoveDefaultModelPath(ulong steamId) =>
+            _defaultModels.Remove(steamId);
+
+        public void ClearDefaultModelPaths() =>
+            _defaultModels.Clear();
     }
 }

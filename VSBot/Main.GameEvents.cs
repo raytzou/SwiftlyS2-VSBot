@@ -70,11 +70,13 @@ namespace VSBot
             var gameState = GetRequiredService<IGameStateService>();
             var playerService = GetRequiredService<IPlayerService>();
             var reviveCommand = GetRequiredService<IRevive>();
+            var modelService = GetRequiredService<IModelService>();
 
             gameState.RemovePlayer(steamId);
             playerService.RemovePlayerPosition(steamId);
             playerService.RemovePlayerWeaponStatus(steamId);
             reviveCommand.OnPlayerDisconnect(steamId);
+            modelService.RemoveDefaultModelPath(steamId);
             SendDisconnectedMessage(gameState.Players.Values.ToList());
             Core.Logger.LogInformation("{client} has disconnected at {DT}", player.Name, DateTime.Now);
 
