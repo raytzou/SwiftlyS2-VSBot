@@ -3,7 +3,7 @@
 - 日期：2026-11-27。
 - 分支：`feature/player-cache-ready`。
 - 基準：最新 `main`，commit `f062e73`。
-- 狀態：分析與規劃，尚未實作。參考使用者指定的快取重試機制對話，並核對目前 Repository。
+- 狀態：已依核准規格完成實作與本機驗證；原計畫保留，實作結果與後續審核回應見文末。尚待 Server 回歸測試。
 
 ## 目的與範圍
 
@@ -165,3 +165,63 @@ playerDataService.WhenPlayerCacheReady(steamId, cache =>
 9. 建置與原有讀取／存檔流程回歸；離線有效性提前返回路徑需核對 SDK 或實機驗證。
 
 Server 測試需有一個明確的暫時驗證呼叫端或之後的正式消費者：現有 !volume 等尚未使用此 API，正常遊玩不能證明 callback 已測到。驗證慢載入後執行一次、載入中斷線重連、換圖、兩玩家隔離與插件卸載；診斷程式與原始 log 不加入正式專案。實作完成後再提供可執行的具體步驟，並區分替身測試與 Server 實測結果。
+
+## 實作與審核回應（2026-11-27）
+
+### 提交紀錄
+
+| Commit | 內容 |
+| --- | --- |
+| `40d5650` | `docs(cache): record approved cache-ready callback specification`：先提交核准規格。 |
+| `2450b39` | `feat(cache): execute callbacks when player data becomes ready`：per-entry 私有 List、CallerMemberName、立即／延遲執行、例外隔離及清理。 |
+| `94511cc` | `fix(events): clean player caches before disconnect validity checks`：early return 分流、真人快取提前清理，保留音樂與 UI 清理。 |
+
+本節另以 docs commit 記錄結果。分支仍為 `feature/player-cache-ready`，未新增正式呼叫端、未改 Model／DB schema，也未加入測試程式或原始 log。
+
+### Disconnect 流程
+
+實際順序為：null 返回 → Music.RemovePlayer → UIModule.OnPlayerDisconnect → Bot 清理後返回 → 真人取得 SteamID 並 SaveAndRemovePlayerCache → 無效玩家返回 → 其餘既有真人清理與通知。
+
+IsFakeClient 只檢查一次，不新增 helper。Bot 的 ClearBotResources 只取消 pickup timer，不寫 UI，故 UI 放在 Bot 分流前沒有已知順序依賴。保留原本對所有 slot 的音樂清理，沒有照抄對話中省略音樂的示例。其餘真人資源仍沿用 IsValid 邊界，沒有順便擴大重構其他 Service。
+
+已讀取 [SwiftlyS2 v1.5.3 Player 實作](https://github.com/swiftly-solution/swiftlys2/blob/v1.5.3/managed/src/SwiftlyS2.Core/Modules/Players/Player.cs)：SteamID 與 IsFakeClient 讀取 managed `_steamID`，會 ThrowIfDisposed，但不要求有效 Pawn／Controller。SteamID 仍受授權模式影響；Strict 模式未授權可回傳 0。這支持在 IsValid 前清理，但不代表已 Dispose 的 player 可以存取，也不代表本機已驗證 CS2 Pre disconnect 的完整時序；本次維持既有 Pre hook，不新增第二套離線事件。
+
+### Loading 是否可能永遠殘留
+
+已檢查既有失敗路徑：
+
+- Queue 拒絕：同步設 LoadFailed 並清空 List。
+- 查詢／新增資料丟出一般例外，或非 Worker 停止所造成的取消：LoadPlayerAsync 記錄錯誤，交回 null，ApplyLoadResult 設 LoadFailed 並清除 callback。
+- 已取得舊資料但更新連線資訊失敗：沿原邏輯記錄錯誤後仍返回有效資料，進入 Ready；這不是 Loading 殘留。
+- Worker token 取消：現有 Main.Unload 先 PrepareShutdown 清空快取，再 Shutdown Worker；停止時略過的工作也不再持有 callback 閉包。
+- ApplyLoadResult 套用過程發生例外：新增清空 List，且仍 Loading 時改成 LoadFailed，避免外層 catch 只記錄錯誤卻保留等待工作。
+- PreparePlayerCache 在 shutdown 後直接返回，不再建立新的 Loading entry。
+
+不宣稱任意框架／程序故障都能自動復原：Scheduler 若無法排入或執行 Game Thread 工作、Worker loop 非預期終止、底層 I/O 永不完成，仍可能等待到 Remove／Clear／Shutdown 才清理。本次不從 Worker 跨執行緒清空 List，也不加入 timer、timeout、polling 或 Worker 重啟機制。
+
+### Reference 與 callback 行為
+
+UpdatePlayerCache 原本已要求傳入 Player 與 entry.Data 為相同 reference，因此正常更新只修改原物件及 dirty 標記，不會讓下一筆 callback 被誤判過期。此情境已測試。
+
+每筆 callback 之前重驗 entry；callback 自行移除、清空、重建或 shutdown 時停止剩餘舊工作。List 在執行前已取出清空，因此單筆例外不會留下重播工作。Ready 即時 callback 與延遲 callback 共用例外隔離方法。
+
+CallerMemberName 是註冊呼叫所在的成員名稱，並非 delegate 的方法名稱；若註冊發生於 local function／lambda，名稱可能是其外層成員，不保證顯示 local function 名稱。介面與實作都有標註，也可在需要時明確傳 caller。
+
+依使用者後續決定，DefaultSkinModelPath 維持原持久化行為，由 Model 分支處理；前文分析不代表本次提出修改需求。
+
+### 已完成驗證
+
+- `dotnet build VSBot.slnx --no-restore -v quiet` 通過：0 errors、14 個既有 Buy 選單棄用警告。
+- `git diff --check` 通過，保留原檔案 BOM／換行格式。
+- Repository 外 `F:\Codex\SwiftlyS2\cache-ready-verification` 使用本次實際編譯的 PlayerDataService，搭配 SDK interface、Repository／Worker／Scheduler 替身；25 項檢查通過，程序 exit code 0。
+- 覆蓋：Worker 完成後必須等排程執行才通知、順序與玩家隔離、Ready 同步取得相同資料、dirty 更新不換 reference、List 清空、Remove／Clear／Shutdown／SaveAndRemove 後舊 entry 不執行、callback 例外及移除／重建／清空／shutdown／巢狀註冊、load failure 與 queue rejection、介面 CallerMemberName、Ready 無資料的拒絕行為。
+- 測試使用可控制的執行佇列，不是 CS2 native scheduler、真 SQL 或真離線事件。Disconnect 流程以程式審閱與 SDK 查證確認，尚未宣稱 Server 實測通過。
+
+### 可直接進行的 Server 回歸測試
+
+1. 部署本次建置並啟動，連線後等既有 `Player cache added` 訊息，測試 !volume、語言設定，離線重連確認保存正常。
+2. 剛連線就立即離線、再重連數次，確認新連線可正常取得快取，沒有舊工作造成重複操作或例外。
+3. 開啟 !ss_lang 後離線重連，確認原 UI 清理仍正常；在音樂延遲播放期間離線，確認音樂清理未受 early return 重構影響。
+4. 正常遊玩與快速換圖，確認 Bot 清理及真人回合流程正常；換圖後快取可重新準備，插件卸載不出現新增例外。
+
+以上是既有行為回歸，不會觸發新 API。callback 的確定性情境已由上述 25 項替身檢查驗證；要進行原生端到端測試，需在驗證用建置或 Model 正式呼叫端，在 PreparePlayerCache 後註冊 callback（記錄 SteamID／Caller），確認 Ready 只執行一次，再測載入中離線／換圖不執行舊工作。正式分支不為此加入示範功能、延遲或診斷指令。
