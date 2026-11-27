@@ -125,7 +125,7 @@ namespace VSBot.Services
 
             if (!_modelInfos.TryGetValue(modelName, out var info))
             {
-                _logger.LogError("Cannot find the modle, modle name: {modleName}", modelName);
+                _logger.LogError("Cannot find the model, model name: {modelName}", modelName);
                 return;
             }
 
