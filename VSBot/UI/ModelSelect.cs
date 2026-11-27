@@ -201,7 +201,25 @@ namespace VSBot.UI
                         return;
                     }
 
+                    var playerCache = _playerDataService.GetPlayerCache(player.SteamID);
+
+                    if (playerCache is null)
+                    {
+                        if (_playerDataService.GetPlayerCacheState(player.SteamID) == PlayerCacheState.Loading)
+                        {
+                            player.SendChat("Your data is still loading, please try again later.");
+                            return;
+                        }
+
+                        player.SendChat("Cannot set the model, please reconnect to server!");
+                        _logger.LogError("Player cache is null, SteamID: {steamId}", player.SteamID);
+                        return;
+                    }
+
+                    playerCache.SelectedModelName = null;
+                    _playerDataService.UpdatePlayerCache(playerCache);
                     _modelService.SetPlayerModelByPath(player, defaultModelPath);
+
                     return;
                 case "models_previous":
                     if (state.Page > 0) state.Page--;
