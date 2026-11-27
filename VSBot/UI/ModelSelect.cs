@@ -193,22 +193,15 @@ namespace VSBot.UI
                     Close(player.PlayerID);
                     return;
                 case "models_reset":
-                    var playerCache = _playerDataService.GetPlayerCache(player.SteamID);
+                    var defaultModelPath = _modelService.GetDefaultModelPath(player.SteamID);
 
-                    if (playerCache is null)
+                    if (string.IsNullOrEmpty(defaultModelPath))
                     {
-                        if (_playerDataService.GetPlayerCacheState(player.SteamID) == PlayerCacheState.Loading)
-                        {
-                            player.SendChat("Your data is still loading, please try again later.");
-                            return;
-                        }
-
-                        player.SendChat("Cannot reset your model! Please contact admin!");
-                        _logger.LogError("Cannot find the player's cache, {steamId}", player.SteamID);
+                        player.SendChat("Something went wrong! Please reconnect to server!");
                         return;
                     }
 
-                    _modelService.SetPlayerModelByPath(player, playerCache.DefaultSkinModelPath);
+                    _modelService.SetPlayerModelByPath(player, defaultModelPath);
                     return;
                 case "models_previous":
                     if (state.Page > 0) state.Page--;

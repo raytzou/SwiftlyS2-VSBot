@@ -14,5 +14,6 @@ namespace VSBot.Services.Interfaces
         void SetPlayerModel(IPlayer player, string modelName);
         void SetPlayerDefaultModelPath(IPlayer player);
         void SetPlayerModelByPath(IPlayer player, string modelPath);
+        string? GetDefaultModelPath(ulong steamId);
     }
 }

@@ -14,20 +14,19 @@ namespace VSBot.Services
         private readonly ISwiftlyCore _core;
         private readonly ILogger<ModelService> _logger;
         private readonly IOptionsMonitor<Config> _config;
-        private readonly IPlayerDataService _playerDataService;
 
-        public ModelService(ISwiftlyCore core, ILogger<ModelService> logger, IOptionsMonitor<Config> config, IPlayerDataService playerDataService)
+        public ModelService(ISwiftlyCore core, ILogger<ModelService> logger, IOptionsMonitor<Config> config)
         {
             _core = core;
             _logger = logger;
             _config = config;
-            _playerDataService = playerDataService;
         }
 
         public List<string> ModelNames => _modelInfos?.Keys.ToList() ??
             throw new InvalidOperationException("Custom models are not initialized.");
 
         private Dictionary<string, ModelInfo>? _modelInfos;
+        private Dictionary<ulong, string> _defaultModels = new();
 
         public string? GetImageKey(string modelName)
         {
@@ -229,14 +228,7 @@ namespace VSBot.Services
                     return;
                 }
 
-
-                _playerDataService.WhenPlayerCacheReady(player.SteamID, (cache) =>
-                {
-                    if (cache.DefaultSkinModelPath == defaultModelPath)
-                        return;
-                    cache.DefaultSkinModelPath = defaultModelPath;
-                    _playerDataService.UpdatePlayerCache(cache);
-                });
+                _defaultModels[player.SteamID] = defaultModelPath;
             });
         }
 
@@ -255,5 +247,8 @@ namespace VSBot.Services
                 player.PlayerPawn.SetModel(modelPath);
             });
         }
+
+        public string? GetDefaultModelPath(ulong steamId) => 
+            _defaultModels.TryGetValue(steamId, out var defaultModelPath) ? defaultModelPath : null;
     }
 }
