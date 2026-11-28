@@ -29,7 +29,7 @@ namespace VSBot.UI
 
         private CCSCustomHudLayout? _modelSelectUI;
 
-        // Only valid while a player has the UI open; SteamId guards against slot reuse.
+        // Only valid while a player has the UI open; SessionId guards against slot reuse.
         private readonly Dictionary<int, ModelSelectViewState> _states = new();
 
         // Skin classes live on the layout per player, so they outlive Close; index 0 is the preview, 1..8 are the cards.
@@ -130,7 +130,7 @@ namespace VSBot.UI
 
             var state = new ModelSelectViewState
             {
-                SteamId = player.SteamID,
+                SessionId = player.SessionId,
                 Models = models
             };
             _states[playerId] = state;
@@ -171,7 +171,7 @@ namespace VSBot.UI
 
             if (player is null || !player.IsValid) return;
 
-            if (!_states.TryGetValue(player.PlayerID, out var state) || state.SteamId != player.SteamID)
+            if (!_states.TryGetValue(player.PlayerID, out var state) || state.SessionId != player.SessionId)
             {
                 // Stale capture from a previous occupant of this slot.
                 Close(player.PlayerID);

@@ -63,6 +63,7 @@ namespace VSBot
             if (provider is null) return;
 
             GetRequiredService<IMusicService>().StopCurrentMusic();
+            GetRequiredService<IModelService>().Unload();
             CancelMapInitialization();
             provider.GetRequiredService<UIModule>().Unload();
 

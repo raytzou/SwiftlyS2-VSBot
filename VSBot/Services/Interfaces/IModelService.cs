@@ -10,6 +10,7 @@ namespace VSBot.Services.Interfaces
         string? GetImageKey(string modelName);
 
         void Initialize();
+        void Unload();
         void Precache(IOnPrecacheResourceEvent @event);
         void SetPlayerModel(IPlayer player, string modelName);
         void SetPlayerDefaultModelPath(IPlayer player);

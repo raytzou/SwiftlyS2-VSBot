@@ -26,6 +26,7 @@ namespace VSBot.Services
             throw new InvalidOperationException("Custom models are not initialized.");
 
         private Dictionary<string, ModelInfo>? _modelInfos;
+        private bool _unloaded;
         private readonly Dictionary<ulong, string> _defaultModels = new();
 
         public string? GetImageKey(string modelName)
@@ -111,6 +112,8 @@ namespace VSBot.Services
 
         public void SetPlayerModel(IPlayer player, string modelName)
         {
+            if (_unloaded) return;
+
             if (_modelInfos is null)
             {
                 throw new InvalidOperationException("Custom models are not initialized.");
@@ -128,11 +131,15 @@ namespace VSBot.Services
                 return;
             }
 
+            var sessionId = player.SessionId;
             _core.Scheduler.NextWorldUpdate(() =>
             {
-                if (player is not { IsValid: true } || player.PlayerPawn is not { IsValid: true })
+                if (_unloaded) return;
+                var currentPlayer = _core.PlayerManager.GetPlayerFromSessionId(sessionId);
+                if (currentPlayer is not { IsValid: true, IsAlive: true }
+                    || currentPlayer.PlayerPawn is not { IsValid: true })
                     return;
-                player.PlayerPawn.SetModel(info.ModelPath);
+                currentPlayer.PlayerPawn.SetModel(info.ModelPath);
             });
 
             if (info.MeshGroupIndex.HasValue)
@@ -185,6 +192,8 @@ namespace VSBot.Services
         // Called synchronously from Spawn, before any custom model is applied.
         public void SetPlayerDefaultModelPath(IPlayer player)
         {
+            if (_unloaded) return;
+
             var currentPlayer = _core.PlayerManager.GetPlayerFromSessionId(player.SessionId);
             if (currentPlayer is not { IsValid: true, IsAlive: true }
                 || currentPlayer.PlayerPawn is not { IsValid: true } pawn)
@@ -210,18 +219,30 @@ namespace VSBot.Services
 
         public void SetPlayerModelByPath(IPlayer player, string modelPath)
         {
+            if (_unloaded) return;
+
             if (player is not { IsValid: true } || player.PlayerPawn is not { IsValid: true })
             {
                 _logger.LogError("Player is not valid.");
                 return;
             }
 
+            var sessionId = player.SessionId;
             _core.Scheduler.NextWorldUpdate(() =>
             {
-                if (player is not { IsValid: true } || player.PlayerPawn is not { IsValid: true })
+                if (_unloaded) return;
+                var currentPlayer = _core.PlayerManager.GetPlayerFromSessionId(sessionId);
+                if (currentPlayer is not { IsValid: true, IsAlive: true }
+                    || currentPlayer.PlayerPawn is not { IsValid: true })
                     return;
-                player.PlayerPawn.SetModel(modelPath);
+                currentPlayer.PlayerPawn.SetModel(modelPath);
             });
+        }
+
+        public void Unload()
+        {
+            _unloaded = true;
+            ClearDefaultModelPaths();
         }
 
         public string? GetDefaultModelPath(ulong steamId) =>
