@@ -1,7 +1,7 @@
-using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.Players;
+using System.Runtime.CompilerServices;
 using VSBot.Domain.Entities;
 using VSBot.Domain.Repositories.Interfaces;
 using VSBot.Services.Interfaces;
@@ -145,7 +145,7 @@ namespace VSBot.Services
                     PlayerName = name,
                     IpAddress = ipAddress,
                     LastTimeConnect = now,
-                    DefaultSkinModelPath = string.Empty,
+                    SelectedModelName = null,
                     Volume = 50,
                     SaysoundVolume = 50,
                     Language = string.Empty
@@ -349,7 +349,7 @@ namespace VSBot.Services
             PlayerName = source.PlayerName,
             IpAddress = source.IpAddress,
             LastTimeConnect = source.LastTimeConnect,
-            DefaultSkinModelPath = source.DefaultSkinModelPath,
+            SelectedModelName = source.SelectedModelName,
             Volume = source.Volume,
             SaysoundVolume = source.SaysoundVolume,
             Language = source.Language

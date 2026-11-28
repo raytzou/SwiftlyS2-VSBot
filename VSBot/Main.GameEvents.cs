@@ -65,6 +65,7 @@ namespace VSBot
 
             var steamId = player.SteamID;
             GetRequiredService<IPlayerDataService>().SaveAndRemovePlayerCache(steamId);
+            GetRequiredService<IModelService>().RemoveDefaultModelPath(steamId);
             if (!player.IsValid) return HookResult.Continue;
 
             var gameState = GetRequiredService<IGameStateService>();
@@ -95,12 +96,12 @@ namespace VSBot
             var player = @event.UserIdPlayer;
             if (player is null || !player.IsValid) return HookResult.Continue;
 
-            if (!player.IsFakeClient)
-            {
-                var musicService = GetRequiredService<IMusicService>();
+            if (player.IsFakeClient)
+                return HookResult.Continue;
 
-                musicService.PlayAfterJoinTeam(player.PlayerID);
-            }
+            var musicService = GetRequiredService<IMusicService>();
+
+            musicService.PlayAfterJoinTeam(player.PlayerID);
 
             return HookResult.Continue;
         }
@@ -109,8 +110,10 @@ namespace VSBot
         public HookResult RoundAnnounceWarmupHandler(EventRoundAnnounceWarmup @event)
         {
             var gameState = GetRequiredService<IGameStateService>();
+            var botModule = GetRequiredService<BotModule>();
 
             gameState.OnWarmupStarted();
+            botModule.OnWarmup();
 
             return HookResult.Continue;
         }
@@ -302,16 +305,44 @@ namespace VSBot
 
             var gameState = GetRequiredService<IGameStateService>();
             var playerService = GetRequiredService<IPlayerService>();
+            var playerDataService = GetRequiredService<IPlayerDataService>();
 
             if (gameState.CurrentRound == 0)
             {
                 playerService.EnableGodMod(player.Slot);
             }
 
-            if (!player.IsFakeClient)
+            if (player.IsFakeClient)
+                return HookResult.Continue;
+
+            playerService.ApplySpawnHealth(player);
+
+            var modelService = GetRequiredService<IModelService>();
+            var sessionId = player.SessionId;
+
+            Core.Scheduler.NextWorldUpdate(() =>
             {
-                playerService.ApplySpawnHealth(player);
-            }
+                var currentPlayer = Core.PlayerManager.GetPlayerFromSessionId(sessionId);
+
+                if (currentPlayer is not { IsValid: true, IsAlive: true })
+                    return;
+
+                modelService.SetPlayerDefaultModelPath(currentPlayer);
+
+                playerDataService.WhenPlayerCacheReady(currentPlayer.SteamID, (cache) =>
+                {
+                    var modelName = cache.SelectedModelName;
+
+                    if (string.IsNullOrEmpty(modelName))
+                        return;
+
+                    var targetPlayer = Core.PlayerManager.GetPlayerFromSessionId(sessionId);
+
+                    if (targetPlayer is not { IsValid: true, IsAlive: true }) return;
+
+                    modelService.SetPlayerModel(targetPlayer, modelName);
+                });
+            });
 
             return HookResult.Continue;
         }

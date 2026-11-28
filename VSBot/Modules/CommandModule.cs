@@ -22,6 +22,7 @@ namespace VSBot.Modules
         private readonly ISaysoundVolume _saysoundVolume;
         private readonly ISaysoundLanguage _saysoundLanguage;
         private readonly IVolume _volume;
+        private readonly IModels _models;
 
         public CommandModule(ISwiftlyCore core, ILogger<CommandModule> logger
             , IInfo info
@@ -37,6 +38,7 @@ namespace VSBot.Modules
             , ISaysoundVolume saysoundVolume
             , ISaysoundLanguage saysoundLanguage
             , IVolume volume
+            , IModels models
             )
         {
             _core = core;
@@ -54,6 +56,7 @@ namespace VSBot.Modules
             _saysoundVolume = saysoundVolume;
             _saysoundLanguage = saysoundLanguage;
             _volume = volume;
+            _models = models;
         }
 
         public void Initialize()
@@ -141,6 +144,12 @@ namespace VSBot.Modules
         public void OnVolumeCommand(ICommandContext context)
         {
             _volume.ExecuteCommand(context);
+        }
+
+        [Command(name: "models", helpText: "Shows model menu")]
+        public void OnModelCommand(ICommandContext context)
+        {
+            _models.ExecuteCommand(context);
         }
 
         /// <summary>
