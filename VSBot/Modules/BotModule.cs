@@ -279,14 +279,15 @@ namespace VSBot.Modules
                 return;
             }
 
+            var modelNames = _modelService.ModelNames;
             var eagleEyeBotModelIndex = _config.CurrentValue.EagleEyeBotModelIndex;
             var rushBotModelIndex = _config.CurrentValue.RushBotModelIndex;
 
-            _modelService.SetPlayerModel(eagleEyeBot, _modelService.ModelNames[eagleEyeBotModelIndex]);
-            _modelService.SetPlayerModel(rushBot, _modelService.ModelNames[rushBotModelIndex]);
+            _modelService.SetPlayerModel(eagleEyeBot, modelNames[eagleEyeBotModelIndex]);
+            _modelService.SetPlayerModel(rushBot, modelNames[rushBotModelIndex]);
 
-            var random = Random.Shared.Next(_modelService.ModelNames.Count);
-            var randomModelName = _modelService.ModelNames[random];
+            var random = Random.Shared.Next(modelNames.Count);
+            var randomModelName = modelNames[random];
 
             _modelService.SetPlayerModel(mimicBot, randomModelName);
         }

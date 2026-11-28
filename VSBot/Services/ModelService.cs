@@ -99,7 +99,7 @@ namespace VSBot.Services
                 .ToHashSet();
             var armPath = modelInfosIterator
                 .Select(s => s.ArmPath)
-                .Where(w => w is not null)
+                .Where(w => !string.IsNullOrWhiteSpace(w))
                 .ToHashSet();
 
             foreach (var model in modelPath)
