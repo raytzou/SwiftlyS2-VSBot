@@ -200,7 +200,6 @@ namespace VSBot.Services
                 return;
 
             var steamId = currentPlayer.SteamID;
-            if (_defaultModels.ContainsKey(steamId)) return;
 
             var sceneNode = pawn.CBodyComponent?.SceneNode;
             if (sceneNode is null) return;
@@ -214,7 +213,7 @@ namespace VSBot.Services
                 string.Equals(info.ModelPath.Replace('\\', '/'), normalizedPath, StringComparison.OrdinalIgnoreCase)))
                 return;
 
-            _defaultModels.Add(steamId, defaultModelPath);
+            _defaultModels[steamId] = defaultModelPath;
         }
 
         // Completion reports whether SetModel ran, not whether the client has rendered it.
