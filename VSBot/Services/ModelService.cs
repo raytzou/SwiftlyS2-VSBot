@@ -217,25 +217,25 @@ namespace VSBot.Services
             _defaultModels.Add(steamId, defaultModelPath);
         }
 
-        public void SetPlayerModelByPath(IPlayer player, string modelPath)
+        // Completion reports whether SetModel ran, not whether the client has rendered it.
+        public void SetPlayerModelByPath(IPlayer player, string modelPath, Action<IPlayer, bool>? onCompleted = null)
         {
             if (_unloaded) return;
-
-            if (player is not { IsValid: true } || player.PlayerPawn is not { IsValid: true })
-            {
-                _logger.LogError("Player is not valid.");
-                return;
-            }
 
             var sessionId = player.SessionId;
             _core.Scheduler.NextWorldUpdate(() =>
             {
                 if (_unloaded) return;
                 var currentPlayer = _core.PlayerManager.GetPlayerFromSessionId(sessionId);
+                if (currentPlayer is null) return;
                 if (currentPlayer is not { IsValid: true, IsAlive: true }
                     || currentPlayer.PlayerPawn is not { IsValid: true })
+                {
+                    onCompleted?.Invoke(currentPlayer, false);
                     return;
+                }
                 currentPlayer.PlayerPawn.SetModel(modelPath);
+                onCompleted?.Invoke(currentPlayer, true);
             });
         }
 

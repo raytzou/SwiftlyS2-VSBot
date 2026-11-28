@@ -122,7 +122,7 @@ namespace VSBot.UI
 
             var player = _core.PlayerManager.GetPlayer(playerId);
 
-            if (player is null || !player.IsValid) return;
+            if (player is null || player.IsFakeClient) return;
 
             var models = _modelService.ModelNames
                 .Select(name => (name, _modelService.GetImageKey(name)))
@@ -169,7 +169,7 @@ namespace VSBot.UI
 
             var player = _core.PlayerManager.GetPlayer(@event.PlayerId);
 
-            if (player is null || !player.IsValid) return;
+            if (player is null || player.IsFakeClient) return;
 
             if (!_states.TryGetValue(player.PlayerID, out var state) || state.SessionId != player.SessionId)
             {
@@ -186,14 +186,6 @@ namespace VSBot.UI
                     Close(player.PlayerID);
                     return;
                 case "models_reset":
-                    var defaultModelPath = _modelService.GetDefaultModelPath(player.SteamID);
-
-                    if (string.IsNullOrEmpty(defaultModelPath))
-                    {
-                        player.SendChat("Something went wrong! Please reconnect to server!");
-                        return;
-                    }
-
                     var playerCache = _playerDataService.GetPlayerCache(player.SteamID);
 
                     if (playerCache is null)
@@ -211,7 +203,17 @@ namespace VSBot.UI
 
                     playerCache.SelectedModelName = null;
                     _playerDataService.UpdatePlayerCache(playerCache);
-                    _modelService.SetPlayerModelByPath(player, defaultModelPath);
+                    var defaultModelPath = _modelService.GetDefaultModelPath(player.SteamID);
+                    if (!player.IsAlive || string.IsNullOrEmpty(defaultModelPath))
+                    {
+                        player.SendChat("Your model will be reset on your next spawn.");
+                        return;
+                    }
+
+                    _modelService.SetPlayerModelByPath(player, defaultModelPath, (currentPlayer, applied) =>
+                        currentPlayer.SendChat(applied
+                            ? "Your model has been reset to default."
+                            : "Your model will be reset on your next spawn."));
 
                     return;
                 case "models_previous":
@@ -268,8 +270,9 @@ namespace VSBot.UI
 
             playerCache.SelectedModelName = state.SelectedName;
             _playerDataService.UpdatePlayerCache(playerCache);
-            _modelService.SetPlayerModel(player, state.SelectedName);
-            player.SendChat($"Your model has been set to {state.SelectedName}.");
+            if (player.IsAlive)
+                _modelService.SetPlayerModel(player, state.SelectedName);
+            player.SendChat($"Your selected model is now {state.SelectedName}.");
         }
 
         private static int GetPageCount(ModelSelectViewState state)
