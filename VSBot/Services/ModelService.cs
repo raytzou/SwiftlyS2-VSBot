@@ -48,13 +48,13 @@ namespace VSBot.Services
 
             if (string.IsNullOrEmpty(modelInfoFileName))
             {
-                throw new InvalidOperationException("Model Info File is not set.");
+                throw new InvalidOperationException("Model info file is not set.");
             }
 
             var modelInfoFile = Path.Join(gameRoot, modelInfoFileName);
             if (!File.Exists(modelInfoFile))
             {
-                throw new InvalidOperationException($"Cannot find the {modelInfoFileName} in game root folder.");
+                throw new InvalidOperationException($"Cannot find the {modelInfoFileName} in the game root folder.");
             }
 
             _modelInfos = new();

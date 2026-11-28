@@ -196,7 +196,7 @@ namespace VSBot.UI
                             return;
                         }
 
-                        player.SendChat("Cannot set the model, please reconnect to server!");
+                        player.SendChat("Cannot set the model, please reconnect to the server!");
                         _logger.LogError("Player cache is null, SteamID: {steamId}", player.SteamID);
                         return;
                     }
@@ -263,7 +263,7 @@ namespace VSBot.UI
                     return;
                 }
 
-                player.SendChat("Cannot set the model, please reconnect to server!");
+                player.SendChat("Cannot set the model, please reconnect to the server!");
                 _logger.LogError("Player cache is null, SteamID: {steamId}", player.SteamID);
                 return;
             }
