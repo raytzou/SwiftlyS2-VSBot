@@ -17,7 +17,7 @@ namespace VSBot.Commands
         {
             var player = context.Sender;
 
-            if (player is null || player.IsFakeClient)
+            if (player is null)
                 return;
 
             _modelSelect.Open(player.PlayerID);
