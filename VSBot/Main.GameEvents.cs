@@ -65,18 +65,17 @@ namespace VSBot
 
             var steamId = player.SteamID;
             GetRequiredService<IPlayerDataService>().SaveAndRemovePlayerCache(steamId);
+            GetRequiredService<IModelService>().RemoveDefaultModelPath(steamId);
             if (!player.IsValid) return HookResult.Continue;
 
             var gameState = GetRequiredService<IGameStateService>();
             var playerService = GetRequiredService<IPlayerService>();
             var reviveCommand = GetRequiredService<IRevive>();
-            var modelService = GetRequiredService<IModelService>();
 
             gameState.RemovePlayer(steamId);
             playerService.RemovePlayerPosition(steamId);
             playerService.RemovePlayerWeaponStatus(steamId);
             reviveCommand.OnPlayerDisconnect(steamId);
-            modelService.RemoveDefaultModelPath(steamId);
             SendDisconnectedMessage(gameState.Players.Values.ToList());
             Core.Logger.LogInformation("{client} has disconnected at {DT}", player.Name, DateTime.Now);
 
@@ -101,10 +100,8 @@ namespace VSBot
                 return HookResult.Continue;
 
             var musicService = GetRequiredService<IMusicService>();
-            var modelService = GetRequiredService<IModelService>();
 
             musicService.PlayAfterJoinTeam(player.PlayerID);
-            modelService.SetPlayerDefaultModelPath(player);
 
             return HookResult.Continue;
         }
@@ -319,6 +316,9 @@ namespace VSBot
                 return HookResult.Continue;
 
             playerService.ApplySpawnHealth(player);
+            var modelService = GetRequiredService<IModelService>();
+            modelService.SetPlayerDefaultModelPath(player);
+            var sessionId = player.SessionId;
             playerDataService.WhenPlayerCacheReady(player.SteamID, (cache) =>
             {
                 var modelName = cache.SelectedModelName;
@@ -326,9 +326,10 @@ namespace VSBot
                 if (string.IsNullOrEmpty(modelName))
                     return;
 
-                var modelService = GetRequiredService<IModelService>();
+                var currentPlayer = Core.PlayerManager.GetPlayerFromSessionId(sessionId);
+                if (currentPlayer is not { IsValid: true, IsAlive: true }) return;
 
-                modelService.SetPlayerModel(player, modelName);
+                modelService.SetPlayerModel(currentPlayer, modelName);
             });
 
             return HookResult.Continue;

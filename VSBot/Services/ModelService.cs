@@ -26,7 +26,7 @@ namespace VSBot.Services
             throw new InvalidOperationException("Custom models are not initialized.");
 
         private Dictionary<string, ModelInfo>? _modelInfos;
-        private Dictionary<ulong, string> _defaultModels = new();
+        private readonly Dictionary<ulong, string> _defaultModels = new();
 
         public string? GetImageKey(string modelName)
         {
@@ -182,54 +182,30 @@ namespace VSBot.Services
             return meshGroupMask;
         }
 
-        private string? GetPlayerDefaultModelPath(ulong steamId)
-        {
-            var player = _core.PlayerManager.GetPlayerFromSteamId(steamId);
-
-            if (player is not { IsValid: true } || player.PlayerPawn is not { IsValid: true })
-                return null;
-
-            var bodyComponent = player.PlayerPawn.CBodyComponent;
-
-            if (bodyComponent is null)
-                return null;
-
-            var sceneNode = bodyComponent.SceneNode;
-
-            if (sceneNode is null)
-                return null;
-
-            return sceneNode.GetSkeletonInstance().ModelState.ModelName;
-        }
-
+        // Called synchronously from Spawn, before any custom model is applied.
         public void SetPlayerDefaultModelPath(IPlayer player)
         {
-            _core.Scheduler.NextWorldUpdate(() =>
-            {
-                if (player is not { IsValid: true })
-                {
-                    _logger.LogWarning("Player is invalid, SteamID: {steamId}", player.SteamID);
-                    return;
-                }
+            var currentPlayer = _core.PlayerManager.GetPlayerFromSessionId(player.SessionId);
+            if (currentPlayer is not { IsValid: true, IsAlive: true }
+                || currentPlayer.PlayerPawn is not { IsValid: true } pawn)
+                return;
 
-                if (player.PlayerPawn is not { IsValid: true })
-                {
-                    player.SendChat("Something went wrong! Please reconnect to server!");
-                    _logger.LogWarning("Player controller is invalid, SteamID: {steamId}", player.SteamID);
-                    return;
-                }
+            var steamId = currentPlayer.SteamID;
+            if (_defaultModels.ContainsKey(steamId)) return;
 
-                var defaultModelPath = GetPlayerDefaultModelPath(player.SteamID);
+            var sceneNode = pawn.CBodyComponent?.SceneNode;
+            if (sceneNode is null) return;
 
-                if (string.IsNullOrEmpty(defaultModelPath))
-                {
-                    player.SendChat("Something went wrong! Please reconnect to server!");
-                    _logger.LogWarning("Cannot get player's default model path, SteamID: {steamId}", player.SteamID);
-                    return;
-                }
+            var defaultModelPath = sceneNode.GetSkeletonInstance().ModelState.ModelName;
+            if (string.IsNullOrWhiteSpace(defaultModelPath)) return;
 
-                _defaultModels[player.SteamID] = defaultModelPath;
-            });
+            // Custom assets can also live under agents/, so compare actual catalog paths.
+            var normalizedPath = defaultModelPath.Replace('\\', '/');
+            if (_modelInfos is not null && _modelInfos.Values.Any(info =>
+                string.Equals(info.ModelPath.Replace('\\', '/'), normalizedPath, StringComparison.OrdinalIgnoreCase)))
+                return;
+
+            _defaultModels.Add(steamId, defaultModelPath);
         }
 
         public void SetPlayerModelByPath(IPlayer player, string modelPath)
