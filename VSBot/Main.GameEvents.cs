@@ -316,20 +316,32 @@ namespace VSBot
                 return HookResult.Continue;
 
             playerService.ApplySpawnHealth(player);
-            var modelService = GetRequiredService<IModelService>();
-            modelService.SetPlayerDefaultModelPath(player);
-            var sessionId = player.SessionId;
-            playerDataService.WhenPlayerCacheReady(player.SteamID, (cache) =>
-            {
-                var modelName = cache.SelectedModelName;
 
-                if (string.IsNullOrEmpty(modelName))
+            var modelService = GetRequiredService<IModelService>();
+            var sessionId = player.SessionId;
+
+            Core.Scheduler.NextWorldUpdate(() =>
+            {
+                var currentPlayer = Core.PlayerManager.GetPlayerFromSessionId(sessionId);
+
+                if (currentPlayer is not { IsValid: true, IsAlive: true })
                     return;
 
-                var currentPlayer = Core.PlayerManager.GetPlayerFromSessionId(sessionId);
-                if (currentPlayer is not { IsValid: true, IsAlive: true }) return;
+                modelService.SetPlayerDefaultModelPath(currentPlayer);
 
-                modelService.SetPlayerModel(currentPlayer, modelName);
+                playerDataService.WhenPlayerCacheReady(currentPlayer.SteamID, (cache) =>
+                {
+                    var modelName = cache.SelectedModelName;
+
+                    if (string.IsNullOrEmpty(modelName))
+                        return;
+
+                    var targetPlayer = Core.PlayerManager.GetPlayerFromSessionId(sessionId);
+
+                    if (targetPlayer is not { IsValid: true, IsAlive: true }) return;
+
+                    modelService.SetPlayerModel(targetPlayer, modelName);
+                });
             });
 
             return HookResult.Continue;
